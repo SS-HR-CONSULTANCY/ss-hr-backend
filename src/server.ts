@@ -26,7 +26,7 @@ async function startServer() {
     process.on("SIGTERM", shutdown);
 
   } catch (error) {
-    logger.error("❌ Server startup failed:", error);
+    logger.error("Server startup failed:", error);
     process.exit(1);
   }
 }
