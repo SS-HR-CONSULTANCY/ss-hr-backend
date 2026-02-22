@@ -1,3 +1,4 @@
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -66,6 +67,7 @@ app.use(compression());
 app.use(helmet());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use(cookieParser());
 app.use(passport.initialize());
 

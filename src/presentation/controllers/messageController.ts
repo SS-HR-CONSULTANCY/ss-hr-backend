@@ -47,8 +47,8 @@ export class MessageController {
             const result = await this.sendMessageUseCase.execute({
                 senderId: new Types.ObjectId(fromUserId),
                 receiverId: new Types.ObjectId(toUserId),
-                image: image,
-                text: text
+                image: image || "",
+                text: text || ""
             });
             res.status(200).json(result);
         } catch (error) {

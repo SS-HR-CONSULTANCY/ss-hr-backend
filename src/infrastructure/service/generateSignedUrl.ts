@@ -1,34 +1,20 @@
-import { s3Client } from '../../config/aws_s3';
-import { aws_s3Config } from '../../config/env';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { SignedUrlRepositoryImpl } from '../database/signedUrl/signedUrlRepositoryImpl';
-
 export class SignedUrlService {
-
   constructor(
-    private bucketName: string = aws_s3Config.bucketName!,
-    private signedUrlRepositoryImpl: SignedUrlRepositoryImpl
+    private bucketName?: string,
+    private signedUrlRepositoryImpl?: any
   ) { }
-  async generateSignedUrl(s3Key: string, expires: number = 172800): Promise<string> {
-
+  
+  async generateSignedUrl(s3Key: string, expires?: number): Promise<string> {
     try {
-      const existing = await this.signedUrlRepositoryImpl.findOneSignedUrl(s3Key);
-      if (existing && existing.expiresAt > new Date()) {
-        return existing.url;
+      if (!s3Key) return "";
+      
+      // If the file is already a full URL (e.g. Google profile pictures, or old S3 URLs), just return it
+      if (s3Key.startsWith("http://") || s3Key.startsWith("https://")) {
+        return s3Key;
       }
 
-      const command = new GetObjectCommand({
-        Bucket: this.bucketName,
-        Key: s3Key,
-      });
-
-      const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: expires });
-      const expiresAt = new Date(Date.now() + expires * 1000);
-
-      const response = await this.signedUrlRepositoryImpl.findOneSignedUrlAndUpdate(s3Key, signedUrl, expiresAt);
-
-      return signedUrl;
+      // If it's a local filename, prepend the new static API route
+      return `/api/uploads/${s3Key}`;
     } catch (error) {
       throw new Error("generateSignedUrl failed")
     }

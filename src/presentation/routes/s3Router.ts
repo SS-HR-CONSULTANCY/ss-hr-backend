@@ -1,13 +1,12 @@
 import express from "express";
-import { s3Controller } from "../controllers/s3Controller";
+import { localFileController } from "../controllers/s3Controller";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { uploadSettings } from "../../infrastructure/middleware/multerMiddleware";
 
 const router = express.Router();
 
-router.get("/presigned-upload-url", authMiddleware, s3Controller.getUploadPresignedUrl);
+router.post("/upload", authMiddleware, uploadSettings.single("file"), localFileController.uploadFile);
 
-router.get("/presigned-get-url", authMiddleware, s3Controller.getFileSignedUrl);
-
-router.delete("/", authMiddleware, s3Controller.deleteFile);
+router.delete("/", authMiddleware, localFileController.deleteFile);
 
 export default router;

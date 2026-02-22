@@ -1,25 +1,22 @@
 import { User } from "../../domain/entities/user";
 import { handleUseCaseError } from "../../infrastructure/error/useCaseError";
-import { S3FileGetUrlService } from "../../infrastructure/service/s3FileGetUrlService";
-import { S3FileDeleteUrlService } from "../../infrastructure/service/s3FileDeleteService";
+import { LocalFileDeleteService } from "../../infrastructure/service/localFileDeleteService";
 import { UserRepositoryImpl } from "../../infrastructure/database/user/userRepositoryImpl";
-import { S3FileUploadUrlService } from "../../infrastructure/service/s3FileUploadUrlService";
-import { ApiResponse, CommonResponse, FolderNames, UploadFilePresignedUrl, UploadFilePresignedUrlRequest } from "../../infrastructure/dtos/common.dts";
+import { LocalFileUploadService } from "../../infrastructure/service/localFileUploadService";
+import { ApiResponse, CommonResponse, FolderNames } from "../../infrastructure/dtos/common.dts";
 
-export class UploadFileToS3UseCase {
+export class UploadLocalFileUseCase {
     constructor(
-        private s3FileUploadUrlService: S3FileUploadUrlService,
+        private localFileUploadService: LocalFileUploadService,
     ) { }
 
-    async execute(data: UploadFilePresignedUrlRequest): Promise<ApiResponse<UploadFilePresignedUrl>> {
+    async execute(file: Express.Multer.File): Promise<ApiResponse<{ uploadUrl: string; key: string }>> {
         try {
+            if (!file) throw new Error("No file provided");
 
-            const { fileName, fileType, folder, userId } = data;
-            if(!fileName || !fileType || !folder || !userId) throw new Error("Invalid request");
-
-            const { uploadUrl, key } = await this.s3FileUploadUrlService.generatePresignedUrl({fileName, fileType, folder, userId})
+            const { uploadUrl, key } = await this.localFileUploadService.uploadFile(file);
             
-            return { success: true, message: "Presigned url", data: {
+            return { success: true, message: "File uploaded successfully", data: {
                 key,
                 uploadUrl
             }};
@@ -30,9 +27,9 @@ export class UploadFileToS3UseCase {
     }
 }
 
-export class DeleteFileFromS3UseCase {
+export class DeleteLocalFileUseCase {
     constructor(
-        private s3FileDeleteUrlService: S3FileDeleteUrlService,
+        private localFileDeleteService: LocalFileDeleteService,
         private userRepositoryImpl: UserRepositoryImpl,
     ) { }
 
@@ -45,29 +42,10 @@ export class DeleteFileFromS3UseCase {
 
             const fileToDelete : string = folderName === FolderNames.resumes ? user.resume : user.profileImage;
 
-            return await this.s3FileDeleteUrlService.deleteFile(fileToDelete);
+            return await this.localFileDeleteService.deleteFile(fileToDelete);
 
         } catch (error) {
             throw handleUseCaseError(error || "Failed to delete file.");
-        }
-    }
-};
-
-export class GetFileSignedUrlUseCase {
-    constructor(
-        private s3FileGetUrlService: S3FileGetUrlService
-    ) { }
-
-    async execute(key: string): Promise<ApiResponse> {
-        try {
-            if (!key) throw new Error("Noe key found");
-
-            const signedUrl = await this.s3FileGetUrlService.getFileUrl(key);
-
-            return { success: true, message: "Signed Url", data: signedUrl };
-
-        } catch (error) {
-            throw handleUseCaseError(error || "Failed to generated signed url.");
         }
     }
 }
