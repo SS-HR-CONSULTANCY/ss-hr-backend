@@ -10,7 +10,7 @@ async function startServer() {
     await connectDB();
 
     const server = socketServer.listen(port, () => {
-      logger.info(`Server running on ${port}`);
+      logger.info(`Server running at ${port}`);
     });
 
     const shutdown = async () => {
