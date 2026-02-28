@@ -4,13 +4,12 @@ import { ApplicationRepositoryImpl } from "../../infrastructure/database/applica
 import { AdminFetchAllApplicationsUseCase, AdminFetchApplicationDetailsUseCase, AdminUpdateApplicationStatusUseCase, GetApplicationStatsUseCase, GetApplicationGraphDataUseCase } from "../../application/adminUse-cases/adminApplicationUseCases";
 import { SignedUrlRepositoryImpl } from "../../infrastructure/database/signedUrl/signedUrlRepositoryImpl";
 import { SignedUrlService } from "../../infrastructure/service/generateSignedUrl";
-import { aws_s3Config } from "../../config/env";
 import { paginationReqQuery } from "../../infrastructure/zod/common.zod";
 import { HandleError } from "../../infrastructure/error/error";
 
 const signedUrlRepositoryImpl = new SignedUrlRepositoryImpl();
 const applicationRepositoryImpl = new ApplicationRepositoryImpl();
-const signedUrlService = new SignedUrlService(aws_s3Config.bucketName, signedUrlRepositoryImpl);
+const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl);
 
 const adminFetchAllApplicationsUseCase = new AdminFetchAllApplicationsUseCase(applicationRepositoryImpl);
 const adminFetchApplicationDetailsUseCase = new AdminFetchApplicationDetailsUseCase(applicationRepositoryImpl, signedUrlService);

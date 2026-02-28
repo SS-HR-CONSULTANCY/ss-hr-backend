@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# SS HR Consultancy - EC2 Setup Script
-# This script sets up the EC2 instance for deployment
+# SS HR Consultancy - GCP Setup Script
+# This script sets up the GCP instance for deployment
 
 set -e
 
-echo "🚀 Starting EC2 setup for SS HR Consultancy..."
+echo "🚀 Starting GCP setup for SS HR Consultancy..."
 
 # Update system
 echo "📦 Updating system packages..."
@@ -46,7 +46,7 @@ sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp /home/$USER
 # echo "📦 Installing Certbot..."
 # sudo apt install -y certbot python3-certbot-nginx
 
-echo "✅ EC2 setup completed!"
+echo "✅ GCP setup completed!"
 echo ""
 echo "Next steps:"
 echo "1. Clone your repository to /var/www/ss-hr-consultancy"

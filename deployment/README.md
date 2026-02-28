@@ -1,21 +1,21 @@
-# SS HR Consultancy - EC2 Deployment Guide
+# SS HR Consultancy - GCE Deployment Guide
 
-This guide will help you deploy both the frontend and backend of SS HR Consultancy on a single EC2 instance using Nginx and PM2.
+This guide will help you deploy both the frontend and backend of SS HR Consultancy on a single GCE instance using Nginx and PM2.
 
 ## 📋 Prerequisites
 
-- EC2 instance running Ubuntu 20.04 or later
-- Domain name pointing to your EC2 instance (optional, but recommended)
-- SSH access to your EC2 instance
+- GCE instance running Ubuntu 20.04 or later
+- Domain name pointing to your GCE instance (optional, but recommended)
+- SSH access to your GCE instance
 - Your repository cloned or ready to deploy
 
 ## 🚀 Quick Start
 
-### Step 1: Initial EC2 Setup
+### Step 1: Initial GCE Setup
 
-1. SSH into your EC2 instance:
+1. SSH into your GCE instance:
    ```bash
-   ssh -i your-key.pem ubuntu@your-ec2-ip
+   ssh -i your-key.pem ubuntu@your-GCE-ip
    ```
 
 2. Clone this repository or upload the deployment files:
@@ -27,8 +27,8 @@ This guide will help you deploy both the frontend and backend of SS HR Consultan
 3. Run the setup script:
    ```bash
    cd /var/www/ss-hr-consultancy
-   chmod +x deployment/scripts/setup-ec2.sh
-   ./deployment/scripts/setup-ec2.sh
+   chmod +x deployment/scripts/setup-GCE.sh
+   ./deployment/scripts/setup-GCE.sh
    ```
 
 ### Step 2: Configure Environment Variables
@@ -47,7 +47,7 @@ This guide will help you deploy both the frontend and backend of SS HR Consultan
    - `JWT_SECRET=your-jwt-secret`
    - `FRONTEND_PRODUCTION_URL=https://your-domain.com`
    - `FRONTEND_PRODUCTION_URL_TWO=https://www.your-domain.com` (if using www)
-   - AWS S3 credentials (if using S3)
+   - Google Cloud Storage (GCS) credentials (if using S3)
    - Redis credentials (if using Redis)
    - Other required environment variables
 
@@ -99,7 +99,7 @@ This will:
 
 ### Step 5: Set Up SSL (Optional but Recommended)
 
-1. Make sure your domain points to your EC2 instance
+1. Make sure your domain points to your GCE instance
 2. Run the SSL setup script:
    ```bash
    chmod +x deployment/scripts/setup-ssl.sh

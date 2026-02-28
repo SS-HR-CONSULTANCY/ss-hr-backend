@@ -1,6 +1,5 @@
 import { Types } from 'mongoose';
 import { Request, Response } from "express";
-import { S3Client } from "@aws-sdk/client-s3";
 import { HandleError } from "../../infrastructure/error/error";
 import {
     CreateTestimonialUseCase,
@@ -13,7 +12,6 @@ import {
 import { RandomStringGenerator } from "../../infrastructure/helper/generateRandomString";
 import { TestimonialRepositoryImpl } from "../../infrastructure/database/testimonial/testimonialRepositoryImpl";
 
-const s3Client = new S3Client();
 const randomStringGenerator = new RandomStringGenerator();
 const testimonialRepositoryImpl = new TestimonialRepositoryImpl();
 

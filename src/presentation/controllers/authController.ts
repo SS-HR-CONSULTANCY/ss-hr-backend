@@ -18,7 +18,7 @@ import {
   VerifyEmailUseCase,
   UpdatePasswordUseCase,
 } from "../../application/authUse-cases/authUseCases";
-import { appConfig, aws_s3Config } from "../../config/env";
+import { appConfig } from "../../config/env";
 import { HandleError } from "../../infrastructure/error/error";
 import { SignedUrlService } from "../../infrastructure/service/generateSignedUrl";
 import { UserRepositoryImpl } from "../../infrastructure/database/user/userRepositoryImpl";
@@ -37,7 +37,7 @@ const resendOtpUseCase = new ResendOtpUseCase(userRepositoryImpl);
 const verifyEmailUseCase = new VerifyEmailUseCase(userRepositoryImpl);
 const updatePasswordUseCase = new UpdatePasswordUseCase(userRepositoryImpl);
 const checkUserStatusUseCase = new CheckUserStatusUseCase(userRepositoryImpl);
-const signedUrlService = new SignedUrlService(aws_s3Config.bucketName, signedUrlRepositoryImpl); const registerUseCase = new RegisterUseCase(userRepositoryImpl);
+const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl); const registerUseCase = new RegisterUseCase(userRepositoryImpl);
 const loginUseCase = new LoginUseCase(userRepositoryImpl, signedUrlService, addressRepositoryImpl, careerDataRepositoryImpl);
 
 const isProduction = appConfig.nodeEnv === "production";

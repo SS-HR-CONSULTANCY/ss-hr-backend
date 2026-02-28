@@ -1,17 +1,17 @@
-# 🚀 Quick Start Guide - EC2 Deployment
+# 🚀 Quick Start Guide - GCE Deployment
 
 ## Prerequisites Checklist
-- [ ] EC2 instance running Ubuntu 20.04+
+- [ ] GCE instance running Ubuntu 20.04+
 - [ ] Domain name (optional but recommended)
 - [ ] MongoDB connection string
 - [ ] Environment variables ready
-- [ ] SSH access to EC2
+- [ ] SSH access to GCE
 
 ## Step-by-Step Deployment
 
-### 1. Connect to EC2
+### 1. Connect to GCE
 ```bash
-ssh -i your-key.pem ubuntu@your-ec2-ip
+ssh -i your-key.pem ubuntu@your-GCE-ip
 ```
 
 ### 2. Clone Repository
@@ -24,8 +24,8 @@ git clone your-repo-url .
 
 ### 3. Run Setup Script
 ```bash
-chmod +x deployment/scripts/setup-ec2.sh
-./deployment/scripts/setup-ec2.sh
+chmod +x deployment/scripts/setup-GCE.sh
+./deployment/scripts/setup-GCE.sh
 ```
 
 ### 4. Configure Environment

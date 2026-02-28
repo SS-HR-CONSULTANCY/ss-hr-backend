@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 import { Request, Response } from "express";
 import { DecodedUser } from "../../express";
-import { S3Client } from "@aws-sdk/client-s3";
 import { HandleError } from "../../infrastructure/error/error";
 import { S3FileKeyZodSchmema } from "../../infrastructure/zod/s3.zod";
 import { ValidateObjectId } from "../../infrastructure/zod/common.zod";
@@ -13,7 +12,6 @@ import { UserCreateAddressUseCase, UserUpdateAddressUseCase } from "../../applic
 import { UserCreateCareerDataUseCase, UserUpdateCareerDataUseCase } from "../../application/userUse-Case.ts/userCareerDataUseCases";
 import { UserUpdatePorifleDataUseCase, UserUpdateResumeKeyUseCase, UserUpdateUserProfileImageUseCase } from "../../application/userUse-Case.ts/userProfileUseCases";
 
-const s3 = new S3Client();
 const userRepositoryImpl = new UserRepositoryImpl();
 const addressRepositoryImpl = new AddressRepositoryImpl();
 const careerDataRepositoryImpl = new CareerDataRepositoryImpl();

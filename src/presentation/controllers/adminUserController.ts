@@ -1,6 +1,5 @@
 import { Types } from 'mongoose';
 import { Request, Response } from "express";
-import { aws_s3Config } from "../../config/env";
 import { HandleError } from "../../infrastructure/error/error";
 import { LimitedRole } from '../../infrastructure/zod/common.zod';
 import { adminCreateUserZodSchema } from '../../infrastructure/zod/user.zod';
@@ -18,7 +17,7 @@ import { JobRepositoryImpl } from "../../infrastructure/database/job/jobReposito
 
 const userRepositoryImpl = new UserRepositoryImpl();
 const signedUrlRepositoryImpl = new SignedUrlRepositoryImpl();
-const signedUrlService = new SignedUrlService(aws_s3Config.bucketName, signedUrlRepositoryImpl);
+const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl);
 const addressRepositoryImpl = new AddressRepositoryImpl();
 const careerDataRepositoryImpl = new CareerDataRepositoryImpl();
 const applicationRepositoryImpl = new ApplicationRepositoryImpl();

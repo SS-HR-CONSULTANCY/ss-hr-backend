@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 import { Request, Response } from "express";
 import { DecodedUser } from "../../express";
-import { aws_s3Config } from "../../config/env";
 import { HandleError } from "../../infrastructure/error/error";
 import { ValidateObjectId } from "../../infrastructure/zod/common.zod";
 import { SignedUrlService } from "../../infrastructure/service/generateSignedUrl";
@@ -13,7 +12,7 @@ import { SignedUrlRepositoryImpl } from "../../infrastructure/database/signedUrl
 
 const messageRepositoryIml = new MessageRepositoryImpl();
 const signedUrlRepositoryImpl = new SignedUrlRepositoryImpl();
-const signedUrlService = new SignedUrlService(aws_s3Config.bucketName, signedUrlRepositoryImpl);
+const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl);
 
 const sendMessageUseCase = new SendMessageUseCase(messageRepositoryIml, signedUrlService);
 const getAllMessagesUseCase = new GetAllMessagesUseCase(messageRepositoryIml, signedUrlService);

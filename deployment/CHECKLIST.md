@@ -4,12 +4,12 @@ Use this checklist to ensure a smooth deployment.
 
 ## Pre-Deployment
 
-- [ ] EC2 instance created and running
+- [ ] GCE instance created and running
 - [ ] Security group configured (ports 22, 80, 443)
 - [ ] Domain name purchased (optional)
-- [ ] Domain DNS configured to point to EC2 IP
+- [ ] Domain DNS configured to point to GCE IP
 - [ ] MongoDB database created and accessible
-- [ ] AWS S3 bucket created (if using S3)
+- [ ] Google Cloud Storage (GCS) bucket created (if using S3)
 - [ ] Redis instance ready (if using Redis)
 - [ ] SSH key pair ready
 - [ ] All environment variables documented
@@ -26,11 +26,11 @@ Use this checklist to ensure a smooth deployment.
 - [ ] `FRONTEND_PRODUCTION_URL=https://your-domain.com`
 - [ ] `FRONTEND_PRODUCTION_URL_TWO=https://www.your-domain.com`
 - [ ] `ADMIN_EMAIL=your-admin-email@example.com`
-- [ ] AWS S3 credentials (if using):
-  - [ ] `AWS_ACCESS_KEY_ID`
-  - [ ] `AWS_SECRET_ACCESS_KEY`
-  - [ ] `AWS_REGION`
-  - [ ] `AWS_S3_BUCKET_NAME`
+- [ ] Google Cloud Storage (GCS) credentials (if using):
+  - [ ] `GCP_ACCESS_KEY_ID`
+  - [ ] `GCP_SECRET_ACCESS_KEY`
+  - [ ] `GCP_REGION`
+  - [ ] `GCP_S3_BUCKET_NAME`
 - [ ] Redis credentials (if using):
   - [ ] `UPSTASH_REDIS_REST_URL`
   - [ ] `UPSTASH_REDIS_REST_TOKEN`
@@ -45,8 +45,8 @@ Use this checklist to ensure a smooth deployment.
 
 ## Deployment Steps
 
-- [ ] Step 1: SSH into EC2 instance
-- [ ] Step 2: Run `setup-ec2.sh` script
+- [ ] Step 1: SSH into GCE instance
+- [ ] Step 2: Run `setup-GCE.sh` script
 - [ ] Step 3: Clone repository to `/var/www/ss-hr-consultancy`
 - [ ] Step 4: Create backend `.env` file with all variables
 - [ ] Step 5: Configure Nginx (update domain name)

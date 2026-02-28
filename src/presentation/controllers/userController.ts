@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 import { Request, Response } from "express";
 import { DecodedUser } from "../../express";
-import { aws_s3Config } from "../../config/env";
 import { HandleError } from "../../infrastructure/error/error";
 import { updateApplicationZodSchmea } from "../../infrastructure/zod/user.zod";
 import { SignedUrlService } from "../../infrastructure/service/generateSignedUrl";
@@ -23,7 +22,7 @@ const addressRepositoryImpl = new AddressRepositoryImpl();
 const signedUrlRepositoryImpl = new SignedUrlRepositoryImpl();
 const testimonialRepositoryImpl = new TestimonialRepositoryImpl();
 const applicationRepositoryImpl = new ApplicationRepositoryImpl();
-const signedUrlService = new SignedUrlService(aws_s3Config.bucketName, signedUrlRepositoryImpl);
+const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl);
 
 const userGetAllJobsUseCase = new UserGetAllJobsUseCase(jobRepositoryImpl);
 const userFetchAllApplicationsUseCase = new UserFetchAllApplicationsUseCase(applicationRepositoryImpl);

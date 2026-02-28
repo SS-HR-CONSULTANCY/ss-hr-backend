@@ -18,7 +18,6 @@
   "author": "Full Stack Solutions",
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/lib-storage": "^3.873.0",
     "@upstash/redis": "^1.35.3",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.1",

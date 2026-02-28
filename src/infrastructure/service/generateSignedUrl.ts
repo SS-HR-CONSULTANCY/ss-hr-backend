@@ -1,6 +1,5 @@
 export class SignedUrlService {
   constructor(
-    private bucketName?: string,
     private signedUrlRepositoryImpl?: any
   ) { }
   

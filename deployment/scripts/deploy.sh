@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SS HR Consultancy - Deployment Script
-# This script deploys both frontend and backend to EC2
+# This script deploys both frontend and backend to GCP
 
 set -e
 
