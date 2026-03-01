@@ -72,7 +72,7 @@ if (appConfig.nodeEnv === 'development') {
     },
   }));
 }
-// test
+// Triggering backend CI/CD pipeline
 app.use('/api/s3', S3Router);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
