@@ -29,7 +29,7 @@ const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl);
 
 const userGetAllJobsUseCase = new UserGetAllJobsUseCase(jobRepositoryImpl);
 const userFetchAllApplicationsUseCase = new UserFetchAllApplicationsUseCase(applicationRepositoryImpl);
-const useGetTestimonialsUseCase = new UseGetTestimonialsUseCase(testimonialRepositoryImpl, signedUrlService);
+const useGetTestimonialsUseCase = new UseGetTestimonialsUseCase(testimonialRepositoryImpl);
 const getAllUsersForChatSideBarUseCase = new GetAllUsersForChatSideBarUseCase(userRepositoryImpl, signedUrlService);
 const userCreateApplicationUseCase = new UserCreateApplicationUseCase(userRepositoryImpl, addressRepositoryImpl, applicationRepositoryImpl);
 const userUpdateApplicationUseCase = new UserUpdateApplicationUseCase(userRepositoryImpl, addressRepositoryImpl, applicationRepositoryImpl);

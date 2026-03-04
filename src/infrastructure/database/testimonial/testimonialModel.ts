@@ -4,7 +4,6 @@ import { REGEX_CLIENT_NAME, REGEX_TESTIMONIAL, REGEX_TEXT_DOT_AMP } from "../../
 export interface ITestimonial extends Document {
   _id: Types.ObjectId;
   clientName: string;
-  clientPhoto: string;
   designation: string;
   testimonial: string;
   isVisible: boolean;
@@ -23,11 +22,7 @@ const TestimonialSchema = new Schema<ITestimonial>(
       match: [REGEX_CLIENT_NAME, "Client name can contain only letters and spaces"],
     },
 
-    clientPhoto: {
-      type: String,
-      minlength: [1, "Client photo must be at least 1 characters"],
-      maxlength: [600, "Client photo must be at most 500 characters"],
-    },
+
 
     designation: {
       type: String,

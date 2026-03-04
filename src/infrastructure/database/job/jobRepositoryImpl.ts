@@ -156,7 +156,7 @@ export class JobRepositoryImpl implements IJobRepository {
             }
           },
 
-          { $match: { applied: false } },
+
 
           {
             $project: {

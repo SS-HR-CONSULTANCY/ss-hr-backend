@@ -21,7 +21,7 @@ router.patch("/career/:id", authMiddleware, userProfileController.updateCareerDa
 
 router.get('/chat/admins', authMiddleware, userController.getAdminsForChatSidebar);
 
-router.get("/testimonials", authMiddleware, userController.getTestimonilas);
+router.get("/testimonials", userController.getTestimonilas);
 
 router.get('/jobs', authMiddleware, userController.getAllJobs);
 

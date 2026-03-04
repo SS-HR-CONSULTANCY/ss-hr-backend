@@ -9,7 +9,6 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
     return new Testimonial(
       testimonial._id,
       testimonial.clientName,
-      testimonial.clientPhoto,
       testimonial.designation,
       testimonial.testimonial,
       testimonial.isVisible,
@@ -36,7 +35,6 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
           {
             _id: 1,
             clientName: 1,
-            clientPhoto: 1,
             designation: 1,
             testimonial: 1,
             isVisible: 1,
@@ -108,7 +106,6 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
           {
             _id: 1,
             clientName: 1,
-            clientPhoto: 1,
             designation: 1,
             testimonial: 1,
             isVisible: 1,

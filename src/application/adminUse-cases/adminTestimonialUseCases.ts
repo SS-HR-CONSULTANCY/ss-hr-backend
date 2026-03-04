@@ -20,11 +20,10 @@ export class CreateTestimonialUseCase {
 
   async execute(data: CreateTestimonialRequest): Promise<CreateTestimonialResponse> {
     try {
-      const { clientName, clientPhoto, designation, testimonial } = data;
+      const { clientName, designation, testimonial } = data;
 
       const createdTestimonial = await this.testimonialRepository.createTestimonial({
         clientName,
-        clientPhoto,
         designation,
         testimonial,
       });
@@ -34,11 +33,10 @@ export class CreateTestimonialUseCase {
 
       return {
         success: true,
-        message: "Testimonial created successfully",
+        message: "Review created successfully",
         testimonial: {
           _id: createdTestimonial._id,
           clientName: createdTestimonial.clientName,
-          clientPhoto: createdTestimonial.clientName,
           designation: createdTestimonial.designation,
           testimonial: createdTestimonial.testimonial,
         },
@@ -56,14 +54,13 @@ export class UpdateTestimonialUseCase {
 
   async execute(data: UpdateTestimonialRequest): Promise<UpdateTestimonialResponse> {
     try {
-      const { _id, clientName, clientPhoto, designation, isVisible, testimonial } = data;
+      const { _id, clientName, designation, isVisible, testimonial } = data;
 
       const existingTestimonial = await this.testimonialRepository.findTestimonialById(_id);
       if (!existingTestimonial) throw new Error("Testimonial not found");
 
       existingTestimonial.clientName = clientName || existingTestimonial.clientName;
       existingTestimonial.designation = designation || existingTestimonial.designation;
-      existingTestimonial.clientPhoto = clientPhoto || existingTestimonial.clientPhoto;
       existingTestimonial.isVisible = isVisible ?? existingTestimonial.isVisible;
       existingTestimonial.testimonial = testimonial || existingTestimonial.testimonial;
 
@@ -72,7 +69,7 @@ export class UpdateTestimonialUseCase {
 
       return {
         success: true,
-        message: "Testimonial updated successfully",
+        message: "Review updated successfully",
       };
     } catch (error) {
       throw handleUseCaseError(error || "Failed to update testimonial");
@@ -96,7 +93,7 @@ export class DeleteTestimonialUseCase {
       const deleted = await this.testimonialRepository.deleteTestimonial(testimonialId);
       if (!deleted) throw new Error("Failed to delete testimonial");
 
-      return { success: true, message: "Testimonial deleted successfully" };
+      return { success: true, message: "Review deleted successfully" };
     } catch (error) {
       throw handleUseCaseError(error || "Failed to delete testimonial");
     }
@@ -117,11 +114,10 @@ export class GetTestimonialByIdUseCase {
 
       return {
         success: true,
-        message: "Testimonial retrieved successfully",
+        message: "Review retrieved successfully",
         testimonial: {
           _id: testimonial._id,
           clientName: testimonial.clientName,
-          clientPhoto: testimonial.clientPhoto,
           designation: testimonial.designation,
           testimonial: testimonial.testimonial,
           isVisible: testimonial.isVisible,
@@ -146,7 +142,7 @@ export class GetAllTestimonialsUseCase {
 
       return {
         success: true,
-        message: "Testimonials retrieved successfully",
+        message: "Reviews retrieved successfully",
         data: result.data,
         currentPage: result.currentPage,
         totalCount: result.totalCount,
@@ -166,7 +162,7 @@ export class GetTestimonialStatsUseCase {
       const totalTestimonials = await this.testimonialRepository.getTotalCount();
       return {
         success: true,
-        message: "Testimonial stats retrieved successfully",
+        message: "Review stats retrieved successfully",
         stats: { totalTestimonials },
       };
     } catch (error) {
