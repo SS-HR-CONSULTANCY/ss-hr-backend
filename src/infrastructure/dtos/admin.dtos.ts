@@ -20,7 +20,7 @@ export type AdminFetchAllApplicationsResponse = Array<{
 } & adminFetchApplicationsJobFields>;
 
 export type AdminFetchApplicationDetailsRequest = Pick<Application, "_id">;
-export type adminfetchApplicationJobDetailFields = Pick<Job, "designation" | "companyName" | "vacancy" | "createdAt" | "benifits" | "industry" | "jobDescription" | "nationality" | "salary" | "skills" | "jobUniqueId">;
+export type adminfetchApplicationJobDetailFields = Pick<Job, "designation" | "companyName" | "vacancy" | "currency" | "createdAt" | "benifits" | "location" | "jobDescription" | "salary" | "jobUniqueId">;
 export type adminFetchApplicationUserDetails = Pick<User, "fullName" | "email" | "dob" | "gender" | "linkedInUsername" | "nationality" | "phone" | "serialNumber" | "portfolioUrl" | "profileImage" | "phoneTwo" | "professionalStatus" | "resume">;
 export type AdminFetchApplicationDetailsResponse = Pick<Application, "createdAt" | "status" | "updatedAt" | "applicationUniqueId"> & {
     jobId: adminfetchApplicationJobDetailFields;

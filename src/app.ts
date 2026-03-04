@@ -20,6 +20,8 @@ import adminPaymentRouter from "./presentation/routes/adminPaymentRouter";
 import adminPackageRouter from "./presentation/routes/adminPackageRouter";
 import adminTestimonialRouter from './presentation/routes/adminTestimonialRouter';
 import adminApplicationRouter from './presentation/routes/adminApplicationRouter';
+import enquiryRouter from './presentation/routes/enquiryRouter';
+import adminEnquiryRouter from './presentation/routes/adminEnquiryRouter';
 
 const app = express();
 
@@ -85,6 +87,8 @@ app.use('/api/admin/testimonials', adminTestimonialRouter);
 app.use('/api/admin/packages', adminPackageRouter);
 app.use('/api/admin/payments', adminPaymentRouter);
 app.use('/api/admin/applications', adminApplicationRouter);
+app.use('/api/enquiry', enquiryRouter);
+app.use('/api/admin/enquiries', adminEnquiryRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

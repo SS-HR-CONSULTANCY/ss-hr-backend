@@ -1,20 +1,10 @@
 import { z } from "zod";
-import { packageName, description, priceIN, priceUAE, packageType, packageDuration, features, food, accommodation, travelCard, utilityBills, airportPickup, jobGuidance, s3FileKey, } from "./common.zod";
+import { packageName } from "./common.zod";
 
 export const createPackageSchema = z.object({
-  food,
-  image: s3FileKey,
-  features,
-  priceIN,
-  priceUAE,
-  travelCard,
-  description,
   packageName,
-  packageType,
-  jobGuidance,
-  utilityBills,
-  accommodation,
-  airportPickup,
-  packageDuration,
+  price: z.string().min(1, "Price is required"),
+  currency: z.enum(["Rs.", "AED"] as [string, ...string[]], { error: "Currency must be Rs. or AED" }),
+  packageIncludes: z.string().min(5, "Package includes must be at least 5 characters").max(2000),
+  packageCategory: z.enum(["general", "visitvisa", "visa"] as [string, ...string[]], { error: "Invalid package category" }),
 });
-

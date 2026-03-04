@@ -136,6 +136,7 @@ export const noticePeriod = z
 export const companyName = stringField("companyName", 2, 100, REGEX_TEXT_DOT_AMP);
 export const designation = stringField("designation", 2, 100, REGEX_TEXT_DOT_AMP);
 export const industry = stringField("industry", 2, 100, REGEX_INDUSTRY);
+export const location = stringField("location", 2, 200, REGEX_TEXT_DOT_AMP);
 export const jobDescription = stringField("jobDescription", 10, 5000, REGEX_LONG_TEXT);
 export const benifits = stringField("benefits", 2, 1000, REGEX_BENEFITS);
 export const salary = numberField("salary", 1, 1000000000);

@@ -10,19 +10,18 @@ export class CreateJobUseCase {
 
   async execute(payload: AdminCreateNewJob): Promise<ApiResponse> {
     try {
-      const { benifits, companyName, designation, industry, jobDescription, nationality, salary, skills, vacancy } = payload;
+      const { benifits, companyName, designation, location, vacancy, currency, jobDescription, salary } = payload;
       if (
         !companyName ||
         !designation ||
-        !industry ||
+        !location ||
+        !vacancy ||
+        !currency ||
         !jobDescription ||
-        !nationality ||
         !salary ||
-        !benifits ||
-        !skills ||
-        !vacancy
+        !benifits
       ) {
-        throw new Error("All fields are required and vacancy must be at least 1");
+        throw new Error("All fields are required");
       }
 
       const job = await this.jobRepository.createJob(payload);

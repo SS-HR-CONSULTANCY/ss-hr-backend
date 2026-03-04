@@ -15,6 +15,8 @@ import { TestimonialRepositoryImpl } from "../../infrastructure/database/testimo
 import { ApplicationRepositoryImpl } from "../../infrastructure/database/application/applicationRepositoryImpl";
 import { GetAllUsersForChatSideBarUseCase } from "../../application/commonUse-cases/getAllUsersForChatSidebarUseCase";
 import { UserCreateApplicationUseCase, UserFetchAllApplicationsUseCase, UserUpdateApplicationUseCase } from "../../application/userUse-Case.ts/userApplicationUseCases";
+import { GetAllPackagesUseCase } from "../../application/adminUse-cases/adminPackageUseCases";
+import { PackageRepositoryImpl } from "../../infrastructure/database/package/packageRepositoryImpl";
 
 const jobRepositoryImpl = new JobRepositoryImpl();
 const userRepositoryImpl = new UserRepositoryImpl();
@@ -22,6 +24,7 @@ const addressRepositoryImpl = new AddressRepositoryImpl();
 const signedUrlRepositoryImpl = new SignedUrlRepositoryImpl();
 const testimonialRepositoryImpl = new TestimonialRepositoryImpl();
 const applicationRepositoryImpl = new ApplicationRepositoryImpl();
+const packageRepositoryImpl = new PackageRepositoryImpl();
 const signedUrlService = new SignedUrlService(signedUrlRepositoryImpl);
 
 const userGetAllJobsUseCase = new UserGetAllJobsUseCase(jobRepositoryImpl);
@@ -31,6 +34,7 @@ const getAllUsersForChatSideBarUseCase = new GetAllUsersForChatSideBarUseCase(us
 const userCreateApplicationUseCase = new UserCreateApplicationUseCase(userRepositoryImpl, addressRepositoryImpl, applicationRepositoryImpl);
 const userUpdateApplicationUseCase = new UserUpdateApplicationUseCase(userRepositoryImpl, addressRepositoryImpl, applicationRepositoryImpl);
 const userGetJobByIdUseCase = new UserGetJobByIdUseCase(jobRepositoryImpl);
+const getAllPackagesUseCase = new GetAllPackagesUseCase(packageRepositoryImpl);
 
 class UserController {
     constructor(
@@ -40,7 +44,8 @@ class UserController {
         private userCreateApplicationUseCase: UserCreateApplicationUseCase,
         private userUpdateApplicationUseCase: UserUpdateApplicationUseCase,
         private userFetchAllApplicationsUseCase: UserFetchAllApplicationsUseCase,
-        private userGetJobByIdUseCase: UserGetJobByIdUseCase
+        private userGetJobByIdUseCase: UserGetJobByIdUseCase,
+        private getAllPackagesUseCase: GetAllPackagesUseCase
     ) {
         this.getAdminsForChatSidebar = this.getAdminsForChatSidebar.bind(this);
         this.getTestimonilas = this.getTestimonilas.bind(this);
@@ -49,6 +54,7 @@ class UserController {
         this.cancelJobApplication = this.cancelJobApplication.bind(this);
         this.getApplications = this.getApplications.bind(this);
         this.userGetJobById = this.userGetJobById.bind(this);
+        this.getUserPackages = this.getUserPackages.bind(this);
     }
 
     async getAdminsForChatSidebar(req: Request, res: Response) {
@@ -132,6 +138,18 @@ class UserController {
         }
     }
 
+    async getUserPackages(req: Request, res: Response): Promise<void> {
+        try {
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const category = req.query.category as string | undefined;
+            const result = await this.getAllPackagesUseCase.execute({ page, limit, category });
+            res.status(200).json(result);
+        } catch (error) {
+            HandleError.handle(error, res);
+        }
+    }
+
 }
 
 export const userController = new UserController(
@@ -141,6 +159,7 @@ export const userController = new UserController(
     userCreateApplicationUseCase,
     userUpdateApplicationUseCase,
     userFetchAllApplicationsUseCase,
-    userGetJobByIdUseCase
+    userGetJobByIdUseCase,
+    getAllPackagesUseCase
 );
 

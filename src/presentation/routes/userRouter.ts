@@ -33,5 +33,9 @@ router.patch('/cancel-job/:id', authMiddleware, userController.cancelJobApplicat
 
 router.get('/applications', authMiddleware, userController.getApplications);
 
+router.get('/packages', authMiddleware, userController.getUserPackages);
+
 export default router;
+
+
 

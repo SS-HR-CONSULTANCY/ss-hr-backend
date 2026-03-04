@@ -6,7 +6,6 @@ import {
   DeletePackageUseCase,
   GetPackageByIdUseCase,
   GetAllPackagesUseCase,
-  GetPackagesByTypeUseCase,
   GetPackageStatsUseCase
 } from '../../application/adminUse-cases/adminPackageUseCases';
 import { HandleError } from "../../infrastructure/error/error";
@@ -18,7 +17,6 @@ const updatePackageUseCase = new UpdatePackageUseCase(packageRepositoryImpl);
 const deletePackageUseCase = new DeletePackageUseCase(packageRepositoryImpl);
 const getPackageByIdUseCase = new GetPackageByIdUseCase(packageRepositoryImpl);
 const getAllPackagesUseCase = new GetAllPackagesUseCase(packageRepositoryImpl);
-const getPackagesByTypeUseCase = new GetPackagesByTypeUseCase(packageRepositoryImpl);
 const getPackageStatsUseCase = new GetPackageStatsUseCase(packageRepositoryImpl);
 
 export class AdminPackageController {
@@ -28,7 +26,6 @@ export class AdminPackageController {
         private deletePackageUseCase: DeletePackageUseCase,
         private getPackageByIdUseCase: GetPackageByIdUseCase,
         private getAllPackagesUseCase: GetAllPackagesUseCase,
-        private getPackagesByTypeUseCase: GetPackagesByTypeUseCase,
         private getPackageStatsUseCase: GetPackageStatsUseCase
     ) {
         this.createPackage = this.createPackage.bind(this);
@@ -36,7 +33,6 @@ export class AdminPackageController {
         this.deletePackage = this.deletePackage.bind(this);
         this.getPackageById = this.getPackageById.bind(this);
         this.getAllPackages = this.getAllPackages.bind(this);
-        this.getPackagesByType = this.getPackagesByType.bind(this);
         this.getPackageStats = this.getPackageStats.bind(this);
     }
 
@@ -83,19 +79,8 @@ export class AdminPackageController {
         try {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 10;
-            const result = await this.getAllPackagesUseCase.execute({ page, limit });
-            return res.status(200).json(result);
-        } catch (error) {
-            HandleError.handle(error, res);
-        }
-    }
-
-    async getPackagesByType(req: Request, res: Response) {
-        try {
-            const packageType = req.params.type;
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 10;
-            const result = await this.getPackagesByTypeUseCase.execute({ packageType, page, limit });
+            const category = req.query.category as string | undefined;
+            const result = await this.getAllPackagesUseCase.execute({ page, limit, category });
             return res.status(200).json(result);
         } catch (error) {
             HandleError.handle(error, res);
@@ -118,7 +103,6 @@ export const adminPackageController = new AdminPackageController(
     deletePackageUseCase,
     getPackageByIdUseCase,
     getAllPackagesUseCase,
-    getPackagesByTypeUseCase,
     getPackageStatsUseCase
 );
 

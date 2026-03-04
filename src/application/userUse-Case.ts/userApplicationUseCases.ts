@@ -22,22 +22,6 @@ export class UserCreateApplicationUseCase {
             if (userDetails.isBlocked) throw new Error("Your account has been blocked.");
             if (!userDetails.isVerified) throw new Error("Your account is not verified.");
 
-            const requiredFields = [
-                { value: userDetails.phone, name: "Phone" },
-                { value: userDetails.gender, name: "Gender" },
-                { value: userDetails.nationality, name: "Nationality" },
-                { value: userDetails.dob, name: "Date of Birth" },
-                { value: userDetails.professionalStatus, name: "Profession" }
-            ];
-
-            const missingFields = requiredFields
-                .filter(field => !field.value)
-                .map(field => field.name);
-
-            if (missingFields.length > 0) {
-                throw new Error(`Please complete the following profile details before applying: ${missingFields.join(", ")}`);
-            }
-
             let application = await this.applicationRepositoryImpl.findApplicationByUserIdWithApplicationId(data);
 
             if (application) {
@@ -84,22 +68,6 @@ export class UserUpdateApplicationUseCase {
 
             if (!userDetails?.isVerified) {
                 throw new Error("You account is not verified");
-            }
-
-            const requiredFields = [
-                { value: userDetails?.phone, name: "Phone" },
-                { value: userDetails?.gender, name: "Gender" },
-                { value: userDetails?.nationality, name: "Nationality" },
-                { value: userDetails?.dob, name: "Date of Birth" },
-                { value: userDetails?.professionalStatus, name: "Profession" }
-            ];
-
-            const missingFields = requiredFields
-                .filter(field => !field.value)
-                .map(field => field.name);
-
-            if (missingFields.length > 0) {
-                throw new Error(`Please complete the following profile details before applying: ${missingFields.join(", ")}`);
             }
 
             const updatedApplication = await this.applicationRepositoryImpl.updateApplication(data);

@@ -1,40 +1,24 @@
 import { Types } from "mongoose";
 import { ApiResponse } from "./common.dts";
-import { PackageType } from "../../domain/entities/package";
+import type { CurrencyType, PackageCategoryType } from "../../domain/entities/package";
 
 // Create Package DTOs
 export interface CreatePackageRequest {
   packageName: string;
-  description: string;
-  priceIN: string;
-  priceUAE: string;
-  packageType: PackageType;
-  packageDuration: number;
-  features: string[];
-  food: boolean;
-  accommodation: boolean;
-  travelCard: boolean;
-  utilityBills: boolean;
-  airportPickup: boolean;
-  jobGuidance: boolean;
+  price: string;
+  currency: CurrencyType;
+  packageIncludes: string;
+  packageCategory: PackageCategoryType;
 }
 
 export interface CreatePackageResponse extends ApiResponse {
   package?: {
     _id: Types.ObjectId;
     packageName: string;
-    description: string;
-    priceIN: string;
-    priceUAE: string;
-    packageType: PackageType;
-    packageDuration: number;
-    features: string[];
-    food: boolean;
-    accommodation: boolean;
-    travelCard: boolean;
-    utilityBills: boolean;
-    airportPickup: boolean;
-    jobGuidance: boolean;
+    price: string;
+    currency: CurrencyType;
+    packageIncludes: string;
+    packageCategory: PackageCategoryType;
   };
 }
 
@@ -42,36 +26,20 @@ export interface CreatePackageResponse extends ApiResponse {
 export interface UpdatePackageRequest {
   _id: Types.ObjectId;
   packageName?: string;
-  description?: string;
-  priceIN?: string;
-  priceUAE?: string;
-  packageType?: PackageType;
-  packageDuration?: number;
-  features?: string[];
-  food?: boolean;
-  accommodation?: boolean;
-  travelCard?: boolean;
-  utilityBills?: boolean;
-  airportPickup?: boolean;
-  jobGuidance?: boolean;
+  price?: string;
+  currency?: CurrencyType;
+  packageIncludes?: string;
+  packageCategory?: PackageCategoryType;
 }
 
 export interface UpdatePackageResponse extends ApiResponse {
   package?: {
     _id: Types.ObjectId;
     packageName: string;
-    description: string;
-    priceIN: string;
-    priceUAE: string;
-    packageType: PackageType;
-    packageDuration: number;
-    features: string[];
-    food: boolean;
-    accommodation: boolean;
-    travelCard: boolean;
-    utilityBills: boolean;
-    airportPickup: boolean;
-    jobGuidance: boolean;
+    price: string;
+    currency: CurrencyType;
+    packageIncludes: string;
+    packageCategory: PackageCategoryType;
   };
 }
 
@@ -84,18 +52,10 @@ export interface GetPackageByIdResponse extends ApiResponse {
   package?: {
     _id: Types.ObjectId;
     packageName: string;
-    description: string;
-    priceIN: string;
-    priceUAE: string;
-    packageType: PackageType;
-    packageDuration: number;
-    features: string[];
-    food: boolean;
-    accommodation: boolean;
-    travelCard: boolean;
-    utilityBills: boolean;
-    airportPickup: boolean;
-    jobGuidance: boolean;
+    price: string;
+    currency: CurrencyType;
+    packageIncludes: string;
+    packageCategory: PackageCategoryType;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -106,9 +66,21 @@ export interface DeletePackageRequest {
   packageId: Types.ObjectId;
 }
 
-// Get Packages by Type DTOs
-export interface GetPackagesByTypeRequest {
-  packageType: string;
-  page: number;
-  limit: number;
+// Get All Packages Response
+export interface GetAllPackagesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    _id: Types.ObjectId;
+    packageName: string;
+    price: string;
+    currency: CurrencyType;
+    packageIncludes: string;
+    packageCategory: PackageCategoryType;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  totalPages: number;
+  currentPage: number;
+  totalCount: number;
 }

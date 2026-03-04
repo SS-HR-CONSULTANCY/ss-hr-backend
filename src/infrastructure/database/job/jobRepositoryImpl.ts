@@ -12,14 +12,13 @@ export class JobRepositoryImpl implements IJobRepository {
     return new Job(
       job._id,
       job.companyName,
-      job.industry,
       job.designation,
-      job.vacancy,
       job.salary,
       job.benifits,
-      job.skills,
+      job.location,
+      job.vacancy,
+      job.currency,
       job.jobDescription,
-      job.nationality,
       job.jobUniqueId,
       job.createdAt,
       job.updatedAt,
@@ -40,8 +39,6 @@ export class JobRepositoryImpl implements IJobRepository {
       const adminGetAllJobsProject = {
         _id: 1,
         companyName: 1,
-        industry: 1,
-        vacancy: 1,
         designation: 1,
         salary: 1,
         jobUniqueId: 1,
@@ -61,9 +58,9 @@ export class JobRepositoryImpl implements IJobRepository {
         data: jobs.map(job => ({
           _id: job._id,
           companyName: job.companyName,
-          industry: job.industry,
           designation: job.designation,
           salary: job.salary,
+          currency: job.currency,
           vacancy: job.vacancy,
           jobUniqueId: job.jobUniqueId,
           createdAt: job.createdAt,
@@ -83,28 +80,27 @@ export class JobRepositoryImpl implements IJobRepository {
       const adminGetAllJobsProject = {
         _id: 1,
         companyName: 1,
-        industry: 1,
         designation: 1,
-        vacancy: 1,
         salary: 1,
+        currency: 1,
         benifits: 1,
-        skills: 1,
+        location: 1,
         jobDescription: 1,
-        nationality: 1,
+        vacancy: 1,
         jobUniqueId: 1,
         createdAt: 1
       };
 
       const userGetAllJobsProject = {
         _id: 1,
-        industry: 1,
+        companyName: 1,
         designation: 1,
-        vacancy: 1,
         salary: 1,
+        currency: 1,
         benifits: 1,
-        skills: 1,
+        location: 1,
         jobDescription: 1,
-        nationality: 1,
+        vacancy: 1,
         jobUniqueId: 1,
         createdAt: 1
       };
@@ -166,6 +162,7 @@ export class JobRepositoryImpl implements IJobRepository {
             $project: {
               _id: 1,
               salary: 1,
+              currency: 1,
               designation: 1,
               vacancy: 1,
               createdAt: 1,
@@ -184,6 +181,7 @@ export class JobRepositoryImpl implements IJobRepository {
         data: jobs.map(job => ({
           _id: job._id,
           salary: job.salary,
+          currency: job.currency,
           designation: job.designation,
           vacancy: job.vacancy,
           createdAt: job.createdAt,

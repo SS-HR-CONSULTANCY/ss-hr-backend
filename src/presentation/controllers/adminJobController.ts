@@ -31,7 +31,7 @@ export class AdminJobController {
   async createJob(req: Request, res: Response): Promise<void> {
     try {
       const validatedData = createJobZodSchema.parse(req.body);
-      const result = await this.createJobUseCase.execute(validatedData);
+      const result = await this.createJobUseCase.execute(validatedData as any);
       res.status(201).json(result);
     } catch (error) {
       HandleError.handle(error, res);

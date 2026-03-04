@@ -9,18 +9,10 @@ export class PackageRepositoryImpl implements IPackageRepository {
     return new Package(
       packageData._id,
       packageData.packageName,
-      packageData.description,
-      packageData.priceIN,
-      packageData.priceUAE,
-      packageData.packageType,
-      packageData.packageDuration,
-      packageData.features,
-      packageData.food,
-      packageData.accommodation,
-      packageData.travelCard,
-      packageData.utilityBills,
-      packageData.airportPickup,
-      packageData.jobGuidance,
+      packageData.price,
+      packageData.currency,
+      packageData.packageIncludes,
+      packageData.packageCategory,
       packageData.createdAt.toISOString(),
       packageData.updatedAt.toISOString()
     );
@@ -35,36 +27,19 @@ export class PackageRepositoryImpl implements IPackageRepository {
     }
   }
 
-  async findAllPackages({ page, limit }: ApiPaginationRequest): Promise<ApiResponse<AdminFetchAllPackages>> {
+  async findAllPackages({ page, limit }: ApiPaginationRequest, category?: string): Promise<ApiResponse<AdminFetchAllPackages>> {
     try {
       const skip = (page - 1) * limit;
+      const filter = category ? { packageCategory: category } : {};
+      const projection = { _id: 1, packageName: 1, price: 1, currency: 1, packageIncludes: 1, packageCategory: 1, createdAt: 1, updatedAt: 1 };
+
       const [packages, totalCount] = await Promise.all([
-        PackageModel.find(
-          {},
-          {
-            _id: 1,
-            packageName: 1,
-            description: 1,
-            priceIN: 1,
-            priceUAE: 1,
-            packageType: 1,
-            packageDuration: 1,
-            features: 1,
-            food: 1,
-            accommodation: 1,
-            travelCard: 1,
-            utilityBills: 1,
-            airportPickup: 1,
-            jobGuidance: 1,
-            createdAt: 1,
-            updatedAt: 1,
-          }
-        )
+        PackageModel.find(filter, projection)
           .skip(skip)
           .limit(limit)
           .sort({ createdAt: -1 })
           .lean(),
-        PackageModel.countDocuments(),
+        PackageModel.countDocuments(filter),
       ]);
 
       const totalPages = Math.ceil(totalCount / limit);
@@ -113,50 +88,6 @@ export class PackageRepositoryImpl implements IPackageRepository {
       return await PackageModel.countDocuments();
     } catch (error) {
       throw new Error("Failed to get total count");
-    }
-  }
-
-  async findPackagesByType(packageType: string, { page, limit }: ApiPaginationRequest): Promise<ApiResponse<AdminFetchAllPackages>> {
-    try {
-      const skip = (page - 1) * limit;
-      const [packages, totalCount] = await Promise.all([
-        PackageModel.find(
-          { packageType },
-          {
-            _id: 1,
-            packageName: 1,
-            description: 1,
-            priceIN: 1,
-            priceUAE: 1,
-            packageType: 1,
-            packageDuration: 1,
-            features: 1,
-            food: 1,
-            accommodation: 1,
-            travelCard: 1,
-            utilityBills: 1,
-            airportPickup: 1,
-            jobGuidance: 1,
-            createdAt: 1,
-            updatedAt: 1,
-          }
-        )
-          .skip(skip)
-          .limit(limit)
-          .sort({ createdAt: -1 })
-          .lean(),
-        PackageModel.countDocuments({ packageType }),
-      ]);
-
-      const totalPages = Math.ceil(totalCount / limit);
-      return {
-        data: packages.map(this.mapToEntity),
-        totalPages,
-        currentPage: page,
-        totalCount,
-      };
-    } catch (error) {
-      throw new Error("Failed to fetch packages by type from database.");
     }
   }
 }

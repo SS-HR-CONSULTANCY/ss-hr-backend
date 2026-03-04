@@ -11,7 +11,7 @@ import {
   DeletePackageRequest,
   GetPackageByIdRequest,
   GetPackageByIdResponse,
-  GetPackagesByTypeRequest,
+  GetAllPackagesResponse,
 } from "../../infrastructure/dtos/package.dto";
 
 export class CreatePackageUseCase {
@@ -19,36 +19,14 @@ export class CreatePackageUseCase {
 
   async execute(data: CreatePackageRequest): Promise<CreatePackageResponse> {
     try {
-      const { 
-        packageName, 
-        description, 
-        priceIN, 
-        priceUAE, 
-        packageType, 
-        packageDuration, 
-        features,
-        food,
-        accommodation,
-        travelCard,
-        utilityBills,
-        airportPickup,
-        jobGuidance
-      } = data;
+      const { packageName, price, currency, packageIncludes, packageCategory } = data;
 
       const createdPackage = await this.packageRepository.createPackage({
         packageName,
-        description,
-        priceIN,
-        priceUAE,
-        packageType,
-        packageDuration,
-        features,
-        food: food || false,
-        accommodation: accommodation || false,
-        travelCard: travelCard || false,
-        utilityBills: utilityBills || false,
-        airportPickup: airportPickup || false,
-        jobGuidance: jobGuidance || false,
+        price,
+        currency,
+        packageIncludes,
+        packageCategory,
       });
 
       return {
@@ -57,18 +35,10 @@ export class CreatePackageUseCase {
         package: {
           _id: createdPackage._id,
           packageName: createdPackage.packageName,
-          description: createdPackage.description,
-          priceIN: createdPackage.priceIN,
-          priceUAE: createdPackage.priceUAE,
-          packageType: createdPackage.packageType,
-          packageDuration: createdPackage.packageDuration,
-          features: createdPackage.features,
-          food: createdPackage.food,
-          accommodation: createdPackage.accommodation,
-          travelCard: createdPackage.travelCard,
-          utilityBills: createdPackage.utilityBills,
-          airportPickup: createdPackage.airportPickup,
-          jobGuidance: createdPackage.jobGuidance,
+          price: createdPackage.price,
+          currency: createdPackage.currency,
+          packageIncludes: createdPackage.packageIncludes,
+          packageCategory: createdPackage.packageCategory,
         },
       };
     } catch (error) {
@@ -90,18 +60,10 @@ export class UpdatePackageUseCase {
       const updatedPackage = new Package(
         existingPackage._id,
         updateData.packageName ?? existingPackage.packageName,
-        updateData.description ?? existingPackage.description,
-        updateData.priceIN ?? existingPackage.priceIN,
-        updateData.priceUAE ?? existingPackage.priceUAE,
-        updateData.packageType ?? existingPackage.packageType,
-        updateData.packageDuration ?? existingPackage.packageDuration,
-        updateData.features ?? existingPackage.features,
-        updateData.food ?? existingPackage.food,
-        updateData.accommodation ?? existingPackage.accommodation,
-        updateData.travelCard ?? existingPackage.travelCard,
-        updateData.utilityBills ?? existingPackage.utilityBills,
-        updateData.airportPickup ?? existingPackage.airportPickup,
-        updateData.jobGuidance ?? existingPackage.jobGuidance,
+        updateData.price ?? existingPackage.price,
+        updateData.currency ?? existingPackage.currency,
+        updateData.packageIncludes ?? existingPackage.packageIncludes,
+        updateData.packageCategory ?? existingPackage.packageCategory,
         existingPackage.createdAt,
         existingPackage.updatedAt
       );
@@ -115,18 +77,10 @@ export class UpdatePackageUseCase {
         package: {
           _id: result._id,
           packageName: result.packageName,
-          description: result.description,
-          priceIN: result.priceIN,
-          priceUAE: result.priceUAE,
-          packageType: result.packageType,
-          packageDuration: result.packageDuration,
-          features: result.features,
-          food: result.food,
-          accommodation: result.accommodation,
-          travelCard: result.travelCard,
-          utilityBills: result.utilityBills,
-          airportPickup: result.airportPickup,
-          jobGuidance: result.jobGuidance,
+          price: result.price,
+          currency: result.currency,
+          packageIncludes: result.packageIncludes,
+          packageCategory: result.packageCategory,
         },
       };
     } catch (error) {
@@ -171,18 +125,10 @@ export class GetPackageByIdUseCase {
         package: {
           _id: packageData._id,
           packageName: packageData.packageName,
-          description: packageData.description,
-          priceIN: packageData.priceIN,
-          priceUAE: packageData.priceUAE,
-          packageType: packageData.packageType,
-          packageDuration: packageData.packageDuration,
-          features: packageData.features,
-          food: packageData.food,
-          accommodation: packageData.accommodation,
-          travelCard: packageData.travelCard,
-          utilityBills: packageData.utilityBills,
-          airportPickup: packageData.airportPickup,
-          jobGuidance: packageData.jobGuidance,
+          price: packageData.price,
+          currency: packageData.currency,
+          packageIncludes: packageData.packageIncludes,
+          packageCategory: packageData.packageCategory,
           createdAt: new Date(packageData.createdAt),
           updatedAt: new Date(packageData.updatedAt),
         },
@@ -196,9 +142,9 @@ export class GetPackageByIdUseCase {
 export class GetAllPackagesUseCase {
   constructor(private packageRepository: PackageRepositoryImpl) {}
 
-  async execute(data: { page: number; limit: number }) {
+  async execute(data: { page: number; limit: number; category?: string }) {
     try {
-      const result = await this.packageRepository.findAllPackages(data);
+      const result = await this.packageRepository.findAllPackages(data, data.category);
       return {
         success: true,
         message: "Packages retrieved successfully",
@@ -206,24 +152,6 @@ export class GetAllPackagesUseCase {
       };
     } catch (error) {
       throw handleUseCaseError(error || "Failed to get packages");
-    }
-  }
-}
-
-export class GetPackagesByTypeUseCase {
-  constructor(private packageRepository: PackageRepositoryImpl) {}
-
-  async execute(data: GetPackagesByTypeRequest) {
-    try {
-      const { packageType, page, limit } = data;
-      const result = await this.packageRepository.findPackagesByType(packageType, { page, limit });
-      return {
-        success: true,
-        message: `${packageType} packages retrieved successfully`,
-        ...result,
-      };
-    } catch (error) {
-      throw handleUseCaseError(error || "Failed to get packages by type");
     }
   }
 }

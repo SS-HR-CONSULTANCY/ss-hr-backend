@@ -1,22 +1,14 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
-import { Package, packageSchema, PackageType } from "../../zod/common.zod";
-import { REGEX_DESCRIPTION, REGEX_FEATURE, REGEX_TEXT_DOT_AMP } from "../../zod/regex";
+import { REGEX_TEXT_DOT_AMP } from "../../zod/regex";
+import type { CurrencyType, PackageCategoryType } from "../../../domain/entities/package";
 
 export interface IPackage extends Document {
   _id: Types.ObjectId;
   packageName: string;
-  description: string;
-  priceIN: string;
-  priceUAE: string;
-  packageType: PackageType;
-  packageDuration: number;
-  features: string[];
-  food: boolean;
-  accommodation: boolean;
-  travelCard: boolean;
-  utilityBills: boolean;
-  airportPickup: boolean;
-  jobGuidance: boolean;
+  price: string;
+  currency: CurrencyType;
+  packageIncludes: string;
+  packageCategory: PackageCategoryType;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,63 +22,28 @@ const PackageSchema = new Schema<IPackage>({
     match: [REGEX_TEXT_DOT_AMP, "Package name can only contain letters, numbers, spaces, dot, & and -"],
     trim: true,
   },
-  description: {
+  price: {
     type: String,
-    required: [true, "Description is required"],
-    minLength: [10, "Description must be at least 10 characters"],
-    maxlength: [1000, "Description must be at most 1000 characters"],
-    match: [REGEX_DESCRIPTION, "Description contains invalid characters"],
+    required: [true, "Price is required"],
     trim: true,
   },
-  priceIN: {
+  currency: {
     type: String,
-    required: [true, "Price in INR is required"],
+    enum: ["Rs.", "AED"],
+    required: [true, "Currency is required"],
   },
-  priceUAE: {
+  packageIncludes: {
     type: String,
-    required: [true, "Price in AED is required"],
-  },
-  packageType: {
-    type: String,
-    enum: Object.values(Package),
-    required: [true, "Package type is required"],
-  },
-  packageDuration: {
-    type: Number,
-    required: [true, "Package duration is required"],
-    min: [1, "Package duration must be at least 1 day"],
-    max: [365, "Package duration cannot exceed 365 days"],
-  },
-  features: [{
-    type: String,
+    required: [true, "Package includes is required"],
+    minLength: [5, "Package includes must be at least 5 characters"],
+    maxlength: [2000, "Package includes must be at most 2000 characters"],
     trim: true,
-    minLength: [1, "Feature must be at least 1 character"],
-    maxLength: [200, "Feature cannot exceed 200 characters"],
-    match: [REGEX_FEATURE, "Feature contains invalid characters"],
-  }],
-  food: {
-    type: Boolean,
-    default: false,
   },
-  accommodation: {
-    type: Boolean,
-    default: false,
-  },
-  travelCard: {
-    type: Boolean,
-    default: false,
-  },
-  utilityBills: {
-    type: Boolean,
-    default: false,
-  },
-  airportPickup: {
-    type: Boolean,
-    default: false,
-  },
-  jobGuidance: {
-    type: Boolean,
-    default: false,
+  packageCategory: {
+    type: String,
+    enum: ["general", "visitvisa", "visa"],
+    required: [true, "Package category is required"],
+    default: "general",
   },
 }, {
   timestamps: true

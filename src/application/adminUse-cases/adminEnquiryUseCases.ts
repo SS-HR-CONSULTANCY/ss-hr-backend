@@ -1,0 +1,41 @@
+import { handleUseCaseError } from "../../infrastructure/error/useCaseError";
+import { EnquiryRepositoryImpl } from "../../infrastructure/database/enquiry/enquiryRepositoryImpl";
+import { GetAllEnquiriesResponse, UpdateEnquiryStatusRequest } from "../../infrastructure/dtos/enquiry.dto";
+
+export class AdminGetAllEnquiriesUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute(data: { page: number; limit: number }): Promise<GetAllEnquiriesResponse> {
+    try {
+      const result = await this.enquiryRepository.findAllEnquiries(data);
+      return {
+        success: true,
+        message: "Enquiries retrieved successfully",
+        ...result,
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to get enquiries");
+    }
+  }
+}
+
+export class AdminUpdateEnquiryStatusUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute({ enquiryId, status }: UpdateEnquiryStatusRequest) {
+    try {
+      const existingEnquiry = await this.enquiryRepository.findEnquiryById(enquiryId);
+      if (!existingEnquiry) throw new Error("Enquiry not found");
+
+      const updated = await this.enquiryRepository.updateEnquiryStatus(enquiryId, status);
+      if (!updated) throw new Error("Failed to update enquiry status");
+
+      return {
+        success: true,
+        message: "Enquiry status updated successfully",
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to update enquiry status");
+    }
+  }
+}

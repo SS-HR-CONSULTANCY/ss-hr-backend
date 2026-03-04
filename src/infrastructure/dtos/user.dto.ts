@@ -94,7 +94,7 @@ export type UpdateCareerDataRequest = Partial<Pick<CareerData, "currentSalary" |
 export type CommonCareerDataType = Omit<CareerData, "userId" | "createdAt">;
 
 // user jobs
-export type UserFetchAllJobsResponse = Array<Pick<Job, "_id" | "salary" | "designation" | "vacancy" | "createdAt" | "jobUniqueId"> & {
+export type UserFetchAllJobsResponse = Array<Pick<Job, "_id" | "salary" | "currency" | "designation" | "vacancy" | "createdAt" | "jobUniqueId"> & {
   applied: boolean;
 }>;
 

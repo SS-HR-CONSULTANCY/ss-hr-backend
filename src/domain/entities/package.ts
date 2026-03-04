@@ -1,23 +1,16 @@
 import { Types } from "mongoose";
-import { PackageType } from "../../infrastructure/zod/common.zod";
-export { PackageType };
+
+export type CurrencyType = "Rs." | "AED";
+export type PackageCategoryType = "general" | "visitvisa" | "visa";
 
 export class Package {
     constructor(
         public _id: Types.ObjectId,
         public packageName: string,
-        public description: string,
-        public priceIN: string,
-        public priceUAE: string,
-        public packageType: PackageType,
-        public packageDuration: number,
-        public features: string[],
-        public food: boolean,
-        public accommodation: boolean,
-        public travelCard: boolean,
-        public utilityBills: boolean,
-        public airportPickup: boolean,
-        public jobGuidance: boolean,
+        public price: string,
+        public currency: CurrencyType,
+        public packageIncludes: string,
+        public packageCategory: PackageCategoryType,
         public createdAt: string,
         public updatedAt: string,
     ) { }
