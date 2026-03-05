@@ -41,6 +41,8 @@ export class JobRepositoryImpl implements IJobRepository {
         companyName: 1,
         designation: 1,
         salary: 1,
+        currency: 1,
+        vacancy: 1,
         jobUniqueId: 1,
         createdAt: 1
       };
