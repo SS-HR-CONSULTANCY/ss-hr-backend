@@ -14,6 +14,7 @@ export interface IPayment extends Document {
   adminNotes: string,
   referenceId: string,
   paymentProof: string,
+  invoiceUrl: string,
   paymentStatus: PaymentStatusType,
   createdAt: Date,
   updatedAt: Date,
@@ -75,6 +76,12 @@ const PaymentSchema = new Schema<IPayment>(
     paymentProof: {
       type: String,
       maxlength: [600, "Payment proof must be at most 500 characters"],
+      trim: true,
+      default: null,
+    },
+    invoiceUrl: {
+      type: String,
+      maxlength: [600, "Invoice URL must be at most 600 characters"],
       trim: true,
       default: null,
     },

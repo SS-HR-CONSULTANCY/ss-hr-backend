@@ -194,11 +194,11 @@ export class GetPaymentStatsUseCase {
 
   async execute() {
     try {
-      const totalPayments = await this.paymentRepository.getTotalCount();
+      const stats = await this.paymentRepository.getDetailedStats();
       return {
         success: true,
         message: "Payment stats retrieved successfully",
-        stats: { totalPayments },
+        stats,
       };
     } catch (error) {
       throw handleUseCaseError(error || "Failed to get payment stats");

@@ -12,6 +12,7 @@ import { GetAllUsersForChatSideBarUseCase } from "../../application/commonUse-ca
 import { CreateUserByAdminUseCase, UpdateUserUseCase, DeleteUserUseCase, GetUserByIdUseCase, GetAllUsersUseCase, GetUserStatsUseCase, AdminFetchUserDetailsUseCase, GetUserGraphDataUseCase, GetOverviewStatsUseCase, GetOverviewGraphDataUseCase } from '../../application/adminUse-cases/adminUserUseCases';
 import { ApplicationRepositoryImpl } from '../../infrastructure/database/application/applicationRepositoryImpl';
 import { PaymentRepositoryImpl } from '../../infrastructure/database/payment/paymentRepositoryImpl';
+import { PackageRepositoryImpl } from '../../infrastructure/database/package/packageRepositoryImpl';
 import { CompanyRepositoryImpl } from "../../infrastructure/database/company/companyRepositoryImpl";
 import { JobRepositoryImpl } from "../../infrastructure/database/job/jobRepositoryImpl";
 
@@ -22,6 +23,7 @@ const addressRepositoryImpl = new AddressRepositoryImpl();
 const careerDataRepositoryImpl = new CareerDataRepositoryImpl();
 const applicationRepositoryImpl = new ApplicationRepositoryImpl();
 const paymentRepositoryImpl = new PaymentRepositoryImpl();
+const packageRepositoryImpl = new PackageRepositoryImpl();
 const companyRepositoryImpl = new CompanyRepositoryImpl();
 const jobRepositoryImpl = new JobRepositoryImpl();
 
@@ -34,7 +36,7 @@ const getAllUsersUseCase = new GetAllUsersUseCase(userRepositoryImpl);
 const getUserStatsUseCase = new GetUserStatsUseCase(userRepositoryImpl, applicationRepositoryImpl, paymentRepositoryImpl);
 const getUserGraphDataUseCase = new GetUserGraphDataUseCase(userRepositoryImpl);
 const adminFetchUserDetailsUseCase = new AdminFetchUserDetailsUseCase(userRepositoryImpl, addressRepositoryImpl, careerDataRepositoryImpl, signedUrlService)
-const getOverviewStatsUseCase = new GetOverviewStatsUseCase(userRepositoryImpl, paymentRepositoryImpl, companyRepositoryImpl, jobRepositoryImpl, applicationRepositoryImpl);
+const getOverviewStatsUseCase = new GetOverviewStatsUseCase(userRepositoryImpl, packageRepositoryImpl, companyRepositoryImpl, jobRepositoryImpl, applicationRepositoryImpl);
 const getOverviewGraphDataUseCase = new GetOverviewGraphDataUseCase(userRepositoryImpl, applicationRepositoryImpl);
 
 export class AdminUserController {

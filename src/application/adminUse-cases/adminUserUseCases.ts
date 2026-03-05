@@ -9,6 +9,7 @@ import { AdminFetchUserDetailsRequest, AdminFetchUserDetailsResponse, GetOvervie
 import {CreateUserByAdminRequest,CreateUserByAdminResponse,UpdateUserRequest,UpdateUserResponse,DeleteUserRequest,GetUserByIdRequest,GetUserByIdResponse} from "../../infrastructure/dtos/user.dto";
 import { SignedUrlService } from "../../infrastructure/service/generateSignedUrl";
 import { IApplicationRepository } from "../../domain/repositories/IApplicationRepository";
+import { IPackageRepository } from "../../domain/repositories/IPackageRepository";
 import { IPaymentRepository } from "../../domain/repositories/IPaymentRepository";
 import { IJobRepository } from "../../domain/repositories/IJobRepository";
 import { ICompanyRepository } from "../../domain/repositories/ICompanyRepository";
@@ -312,7 +313,7 @@ export class AdminFetchUserDetailsUseCase {
 export class GetOverviewStatsUseCase {
   constructor(
     private userRepository: UserRepositoryImpl,
-    private paymentRepository: IPaymentRepository,
+    private packageRepository: IPackageRepository,
     private companyRepository: CompanyRepositoryImpl,
     private jobRepository: JobRepositoryImpl,
     private applicationRepository: IApplicationRepository,
@@ -321,7 +322,7 @@ export class GetOverviewStatsUseCase {
   async execute(): Promise<ApiResponse<GetOverviewStatsResponse>> {
     try {
       const totalUsers = await this.userRepository.getTotalCount();
-      const totalPackages = await this.paymentRepository.getTotalCount(); // Placeholder logic
+      const totalPackages = await this.packageRepository.getTotalCount();
       const totalJobsAvailable = await this.jobRepository.countJobs();
       const totalCompanies = await this.companyRepository.countCompanies();
       const totalPostions = await this.jobRepository.countJobs(); // Assuming positions ~= jobs for now

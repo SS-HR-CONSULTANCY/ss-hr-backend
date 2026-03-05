@@ -2,8 +2,8 @@ import { Types } from "mongoose";
 import { Payment } from "../entities/payment";
 import { ApiPaginationRequest, ApiResponse } from "../../infrastructure/dtos/common.dts";
 
-export type CreatePayment = Pick<Payment,  "customerName" | "packageName" | "totalAmount" | "paidAmount" | "balanceAmount" | "paymentMethod" | "paymentDate" | "referenceId" | "adminNotes" | "paymentStatus" | "paymentProof">;
-export type AdminFetchAllPayments = Array<Pick<Payment, "customerName" | "packageName" | "totalAmount" | "paidAmount" | "balanceAmount" | "paymentStatus" | "_id">>
+export type CreatePayment = Pick<Payment,  "customerName" | "packageName" | "totalAmount" | "paidAmount" | "balanceAmount" | "paymentMethod" | "paymentDate" | "referenceId" | "adminNotes" | "paymentStatus" | "paymentProof" | "invoiceUrl">;
+export type AdminFetchAllPayments = Array<Pick<Payment, "customerName" | "packageName" | "totalAmount" | "paidAmount" | "balanceAmount" | "paymentStatus" | "paymentProof" | "invoiceUrl" | "_id">>
 
 export interface IPaymentRepository {
 
@@ -26,5 +26,11 @@ export interface IPaymentRepository {
     findPaymentsByStatus(status: string, { page, limit }: ApiPaginationRequest): Promise<ApiResponse<AdminFetchAllPayments>>;
 
     getPaymentGraphData(): Promise<any>; // Using any temporarily or specific type if imported
+
+    getDetailedStats(): Promise<{
+        totalPayments: number;
+        totalRevenue: number;
+        totalPending: number;
+    }>;
 
 }

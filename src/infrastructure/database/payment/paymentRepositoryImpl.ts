@@ -20,6 +20,7 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
       payment.adminNotes,
       payment.referenceId,
       payment.paymentProof,
+      payment.invoiceUrl,
       payment.paymentStatus,
       payment.createdAt,
       payment.updatedAt,
@@ -55,7 +56,7 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
       const skip = (page - 1) * limit;
       const [payments, totalCount] = await Promise.all([
         PaymentModel.find({}, {
-          _id: 1, customerName: 1, packageName: 1, totalAmount: 1, paidAmount: 1, balanceAmount: 1, paymentStatus: 1
+          _id: 1, customerName: 1, packageName: 1, totalAmount: 1, paidAmount: 1, balanceAmount: 1, paymentStatus: 1, paymentProof: 1, invoiceUrl: 1, referenceId: 1
         })
           .skip(skip)
           .limit(limit)
@@ -224,22 +225,15 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
       // Revenue Line Graph Data (Last 7 Days Revenue Breakdown)
       const lineData = await PaymentModel.aggregate([
         {
-           $match: {
-             createdAt: { $gte: sevenDaysAgo }
-           }
+          $match: {
+            createdAt: { $gte: sevenDaysAgo }
+          }
         },
         {
           $project: {
             date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
             totalAmount: 1,
-            // Assuming we can distinguish revenue types, otherwise generic
-             // In Payment entity, we might not have 'type'.
-             // Looking at Payment schema: customerName, packageName, totalAmount...
-             // If packageName exists, maybe it's package revenue?
-             // If there's a hiring related field...
-             // For now, I'll assume if packageName is present -> Package Revenue.
-             // If not -> Hiring Revenue (or other).
-             isPackage: { $cond: [{ $ifNull: ["$packageName", false] }, 1, 0] }
+            isPackage: { $cond: [{ $ifNull: ["$packageName", false] }, 1, 0] }
           }
         },
         {
@@ -247,14 +241,14 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
             _id: "$date",
             totalRevenue: { $sum: "$totalAmount" },
             packageRevenue: {
-                $sum: {
-                    $cond: [ { $eq: ["$isPackage", 1] }, "$totalAmount", 0 ]
-                }
+              $sum: {
+                $cond: [{ $eq: ["$isPackage", 1] }, "$totalAmount", 0]
+              }
             },
             hiringRevenue: {
-                $sum: {
-                     $cond: [ { $eq: ["$isPackage", 0] }, "$totalAmount", 0 ]
-                }
+              $sum: {
+                $cond: [{ $eq: ["$isPackage", 0] }, "$totalAmount", 0]
+              }
             }
           }
         },
@@ -269,9 +263,6 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
         hiringRevenue: item.hiringRevenue
       }));
 
-       // Ensure all days are covered? Optional, but better for graphs.
-       // For now, returning aggregation result.
-
       return {
         paymentsRadialGragphData,
         revenueLineGraphData
@@ -279,6 +270,35 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
 
     } catch (error) {
       throw new Error("Failed to fetch payment graph data from database.");
+    }
+  }
+
+  async getDetailedStats(): Promise<{
+    totalPayments: number;
+    totalRevenue: number;
+    totalPending: number;
+  }> {
+    try {
+      const [totalPayments, financeStats] = await Promise.all([
+        PaymentModel.countDocuments(),
+        PaymentModel.aggregate([
+          {
+            $group: {
+              _id: null,
+              totalRevenue: { $sum: "$paidAmount" },
+              totalPending: { $sum: "$balanceAmount" }
+            }
+          }
+        ])
+      ]);
+
+      return {
+        totalPayments,
+        totalRevenue: financeStats[0]?.totalRevenue || 0,
+        totalPending: financeStats[0]?.totalPending || 0
+      };
+    } catch (error) {
+      throw new Error("Failed to get detailed payment stats");
     }
   }
 }

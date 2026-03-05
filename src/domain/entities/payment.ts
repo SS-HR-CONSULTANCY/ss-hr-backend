@@ -14,6 +14,7 @@ export class Payment {
         public adminNotes: string,
         public referenceId: string,
         public paymentProof: string,
+        public invoiceUrl: string,
         public paymentStatus: PaymentStatusType,
         public createdAt: Date,
         public updatedAt: Date,
