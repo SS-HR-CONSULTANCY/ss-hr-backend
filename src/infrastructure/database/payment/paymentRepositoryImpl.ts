@@ -195,77 +195,117 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
   async getPaymentGraphData(): Promise<GetPaymentGraphDataResponse> {
     try {
       const today = new Date();
-      const sevenDaysAgo = new Date(today);
-      sevenDaysAgo.setDate(today.getDate() - 6);
+      const currentYear = today.getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1);
+      const startOfFiveYearsAgo = new Date(currentYear - 4, 0, 1);
 
-      // Radial Graph Data (Last 7 Days Count)
-      const radialData = await PaymentModel.aggregate([
+      // Monthly Graph Data (Current Year Breakdowns)
+      const monthlyDataAgg = await PaymentModel.aggregate([
         {
           $match: {
-            createdAt: { $gte: sevenDaysAgo }
-          }
-        },
-        {
-          $group: {
-            _id: { $dayOfWeek: "$createdAt" },
-            count: { $sum: 1 }
-          }
-        }
-      ]);
-
-      const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const paymentsRadialGragphData = daysOfWeek.map((day, index) => {
-        const found = radialData.find(d => d._id === index + 1);
-        return {
-          day,
-          count: found ? found.count : 0
-        };
-      });
-
-      // Revenue Line Graph Data (Last 7 Days Revenue Breakdown)
-      const lineData = await PaymentModel.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: sevenDaysAgo }
-          }
+            createdAt: { $gte: startOfYear },
+          },
         },
         {
           $project: {
-            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            month: { $month: "$createdAt" },
             totalAmount: 1,
-            isPackage: { $cond: [{ $ifNull: ["$packageName", false] }, 1, 0] }
-          }
+            packageName: 1,
+          },
         },
         {
           $group: {
-            _id: "$date",
-            totalRevenue: { $sum: "$totalAmount" },
-            packageRevenue: {
+            _id: "$month",
+            expense: {
               $sum: {
-                $cond: [{ $eq: ["$isPackage", 1] }, "$totalAmount", 0]
-              }
+                $cond: [
+                  { $not: [{ $in: ["$packageName", ["Invoice", "Receipt"]] }] },
+                  "$totalAmount",
+                  0,
+                ],
+              },
             },
-            hiringRevenue: {
+            invoice: {
               $sum: {
-                $cond: [{ $eq: ["$isPackage", 0] }, "$totalAmount", 0]
-              }
-            }
-          }
+                $cond: [{ $eq: ["$packageName", "Invoice"] }, "$totalAmount", 0],
+              },
+            },
+            receipt: {
+              $sum: {
+                $cond: [{ $eq: ["$packageName", "Receipt"] }, "$totalAmount", 0],
+              },
+            },
+          },
         },
-        { $sort: { _id: 1 } }
+        { $sort: { _id: 1 } },
       ]);
 
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthlyData = months.map((name, idx) => {
+        const found = monthlyDataAgg.find((d) => d._id === idx + 1);
+        return {
+          name,
+          expense: found ? found.expense : 0,
+          invoice: found ? found.invoice : 0,
+          receipt: found ? found.receipt : 0,
+        };
+      });
 
-      const revenueLineGraphData = lineData.map(item => ({
-        date: item._id,
-        totalRevenue: item.totalRevenue,
-        packageRevenue: item.packageRevenue,
-        hiringRevenue: item.hiringRevenue
-      }));
+      // Yearly Graph Data (Last 5 Years)
+      const yearlyDataAgg = await PaymentModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startOfFiveYearsAgo },
+          },
+        },
+        {
+          $project: {
+            year: { $year: "$createdAt" },
+            totalAmount: 1,
+            packageName: 1,
+          },
+        },
+        {
+          $group: {
+            _id: "$year",
+            expense: {
+              $sum: {
+                $cond: [
+                  { $not: [{ $in: ["$packageName", ["Invoice", "Receipt"]] }] },
+                  "$totalAmount",
+                  0,
+                ],
+              },
+            },
+            invoice: {
+              $sum: {
+                $cond: [{ $eq: ["$packageName", "Invoice"] }, "$totalAmount", 0],
+              },
+            },
+            receipt: {
+              $sum: {
+                $cond: [{ $eq: ["$packageName", "Receipt"] }, "$totalAmount", 0],
+              },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+
+      const yearlyDataArray = [];
+      for (let i = currentYear - 4; i <= currentYear; i++) {
+        const found = yearlyDataAgg.find((d) => d._id === i);
+        yearlyDataArray.push({
+          name: i.toString(),
+          expense: found ? found.expense : 0,
+          invoice: found ? found.invoice : 0,
+          receipt: found ? found.receipt : 0,
+        });
+      }
 
       return {
-        paymentsRadialGragphData,
-        revenueLineGraphData
+        monthlyData,
+        yearlyData: yearlyDataArray,
       };
 
     } catch (error) {

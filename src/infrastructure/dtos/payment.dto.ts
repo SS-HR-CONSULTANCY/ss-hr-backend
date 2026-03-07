@@ -14,7 +14,8 @@ export interface CreatePaymentRequest {
   paymentDate: Date,
   adminNotes: string,
   referenceId: string,
-  paymentProof: string
+  paymentProof: string,
+  invoiceUrl: string,
   paymentStatus: PaymentStatusType,
 }
 
@@ -35,6 +36,7 @@ export interface UpdatePaymentRequest {
   adminNotes: string,
   referenceId: string,
   paymentProof: string,
+  invoiceUrl: string,
   paymentStatus: PaymentStatusType,
 }
 
@@ -51,6 +53,7 @@ export interface UpdatePaymentResponse extends ApiResponse {
     adminNotes: string,
     referenceId: string,
     paymentProof: string,
+    invoiceUrl: string,
     paymentStatus: PaymentStatusType,
   };
 }
@@ -91,14 +94,16 @@ export interface GetPaymentsByStatusRequest {
 }
 
 export interface GetPaymentGraphDataResponse {
-  paymentsRadialGragphData: Array<{
-    day: string;
-    count: number;
+  monthlyData: Array<{
+    name: string;
+    expense: number;
+    invoice: number;
+    receipt: number;
   }>;
-  revenueLineGraphData: Array<{
-    date: string;
-    totalRevenue: number;
-    packageRevenue: number;
-    hiringRevenue: number;
+  yearlyData: Array<{
+    name: string;
+    expense: number;
+    invoice: number;
+    receipt: number;
   }>;
 }
