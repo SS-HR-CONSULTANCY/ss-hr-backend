@@ -82,24 +82,30 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
                     .populate<{ jobId: adminFetchApplicationsJobFields }>("jobId")
                     .populate<{ userId: { fullName: string } }>("userId", "fullName")
                     .skip((page - 1) * limit)
-                    .limit(limit),
+                    .limit(limit)
+                    .sort({ createdAt: -1 }),
                 ApplicationModel.countDocuments()
             ]);
 
             const totalPages = Math.ceil(totalCount / limit);
 
             return {
-                data: applications.map(application => ({
-                    _id: application._id,
-                    updatedAt: application.updatedAt,
-                    status: application.status,
-                    applicationUniqueId: application.applicationUniqueId,
-                    jobId: application.jobId._id,
-                    jobUniqueId: application.jobId.jobUniqueId,
-                    designation: application.jobId.designation,
-                    companyName: application.jobId.companyName,
-                    userName: (application.userId as unknown as { fullName: string })?.fullName || "Unknown User"
-                })),
+                data: applications.map(application => {
+                    const jobId = application.jobId as unknown as adminFetchApplicationsJobFields;
+                    const userId = application.userId as unknown as { fullName: string };
+                    
+                    return {
+                        _id: application._id,
+                        updatedAt: application.updatedAt,
+                        status: application.status,
+                        applicationUniqueId: application.applicationUniqueId,
+                        jobId: jobId?._id,
+                        jobUniqueId: jobId?.jobUniqueId || "N/A",
+                        designation: jobId?.designation || "N/A",
+                        companyName: jobId?.companyName || "N/A",
+                        userName: userId?.fullName || "Unknown User"
+                    };
+                }),
                 totalPages,
                 currentPage: page,
                 totalCount
