@@ -51,18 +51,31 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
     }
   }
 
-  async findAllPayments({ page, limit }: ApiPaginationRequest): Promise<ApiResponse<AdminFetchAllPayments>> {
+  async findAllPayments({ page, limit, category }: ApiPaginationRequest & { category?: string }): Promise<ApiResponse<AdminFetchAllPayments>> {
     try {
       const skip = (page - 1) * limit;
+
+      // Build category filter on packageName
+      let filter: Record<string, any> = {};
+      if (category && category !== 'all') {
+        if (category === 'Expense') {
+          // Expenses = anything that is not Invoice or Receipt
+          filter.packageName = { $nin: ['Invoice', 'Receipt'] };
+        } else {
+          // Exact match for Invoice / Receipt
+          filter.packageName = category;
+        }
+      }
+
       const [payments, totalCount] = await Promise.all([
-        PaymentModel.find({}, {
-          _id: 1, customerName: 1, packageName: 1, totalAmount: 1, paidAmount: 1, balanceAmount: 1, paymentStatus: 1, paymentProof: 1, invoiceUrl: 1, referenceId: 1
+        PaymentModel.find(filter, {
+          _id: 1, customerName: 1, packageName: 1, totalAmount: 1, paidAmount: 1, balanceAmount: 1, paymentStatus: 1, paymentProof: 1, invoiceUrl: 1, referenceId: 1, paymentDate: 1, adminNotes: 1, createdAt: 1
         })
           .skip(skip)
           .limit(limit)
           .sort({ createdAt: -1 })
           .lean(),
-        PaymentModel.countDocuments(),
+        PaymentModel.countDocuments(filter),
       ]);
 
       const totalPages = Math.ceil(totalCount / limit);

@@ -95,7 +95,8 @@ export class AdminPaymentController {
         try {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 10;
-            const result = await this.getAllPaymentsUseCase.execute({ page, limit });
+            const category = req.query.category as string | undefined;
+            const result = await this.getAllPaymentsUseCase.execute({ page, limit, category });
             return res.status(200).json(result);
         } catch (error) {
             HandleError.handle(error, res);

@@ -122,7 +122,7 @@ export class GetPaymentByIdUseCase {
 export class GetAllPaymentsUseCase {
   constructor(private paymentRepository: PaymentRepositoryImpl) {}
 
-  async execute(data: { page: number; limit: number }) {
+  async execute(data: { page: number; limit: number; category?: string }) {
     try {
       const result = await this.paymentRepository.findAllPayments(data);
       return {
