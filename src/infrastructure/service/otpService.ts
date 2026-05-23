@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
+import { randomInt } from 'crypto';
 import { mailConfig } from '../../config/env';
-import { generateOTP } from 'otp-generator-module';
 
 interface EmailOptions {
   subject: string;
@@ -14,7 +14,7 @@ export class OTPService {
 
   static async setOtp(verificationToken: string): Promise<string> {
     try {
-      const otp = generateOTP({ length: 6 });
+      const otp = String(randomInt(100000, 999999));
       otpStore.set(verificationToken, otp);
       
       // Expire after 60 seconds (same as Redis px: 60000)
