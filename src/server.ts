@@ -4,7 +4,7 @@ import { connectDB, disconnectDB } from "./config/database/connection";
 import logger from "./infrastructure/logger/logger";
 
 const port = parseInt(appConfig.port || "5000", 10);
-
+// deployment fix
 async function startServer() {
   try {
     await connectDB();
