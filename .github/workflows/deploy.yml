@@ -1,4 +1,4 @@
-name: Deploy Backend
+name: Deploy Backend to Cloud Run
 
 on:
   push:
@@ -6,8 +6,41 @@ on:
       - main
 
 jobs:
-  notify:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deployed via Render
-        run: echo "Render auto-deploys on push to main. No action needed."
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run (source-based)
+        run: |
+          gcloud run deploy ss-hr-backend \
+            --source . \
+            --region asia-south1 \
+            --project ss-hr-consultancy-508807 \
+            --platform managed \
+            --allow-unauthenticated \
+            --update-env-vars "NODE_ENV=production,\
+          FRONTEND_PRODUCTION_URL=https://www.sshrconsultancy.com,\
+          FRONTEND_PRODUCTION_URL_TWO=https://sshrconsultancy.com,\
+          MONGODB_PRODUCTION_URI=${{ secrets.MONGODB_PRODUCTION_URI }},\
+          JWT_SECRET=${{ secrets.JWT_SECRET }},\
+          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }},\
+          OFFICIAL_EMAIL=${{ secrets.OFFICIAL_EMAIL }},\
+          OFFICIALEMAIL_PASS=${{ secrets.OFFICIALEMAIL_PASS }},\
+          PASSWORD_HASHSALT=${{ secrets.PASSWORD_HASHSALT }},\
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }},\
+          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }},\
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},\
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},\
+          GOOGLE_CALLBACK_PRODUCTION_URL=${{ secrets.GOOGLE_CALLBACK_PRODUCTION_URL }},\
+          SESSION_SECRET=${{ secrets.SESSION_SECRET }}"
