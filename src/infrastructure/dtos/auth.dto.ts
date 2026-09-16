@@ -69,6 +69,22 @@ export interface CheckUserStatusRequest {
 }
 export interface CheckUserStatusResponse extends CommonResponse {
   status: number;
+  user?: {
+    _id?: Types.ObjectId;
+    fullName: string;
+    email?: string;
+    profileImage?: string;
+    role: Role | LimitedRole;
+    phone?: string;
+    phoneTwo?: string;
+    gender?: Gender;
+    nationality?: string;
+    dob?: Date;
+    linkedInUsername?: string;
+    portfolioUrl?: string;
+    resume?: string;
+    professionalStatus?: string;
+  };
 }
 
 

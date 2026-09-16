@@ -220,12 +220,34 @@ export class CheckUserStatusUseCase {
     const { id } = data;
 
     const user = await this.userRepository.findUserById(new Types.ObjectId(id));
-    if (user?.isBlocked) {
+    if (!user) {
+      return { status: 404, success: false, message: "User not found." };
+    }
+    if (user.isBlocked) {
       return { status: 403, success: false, message: "Your account has been blocked." };
     } else {
-      return { status: 200, success: true, message: "Your account is active." };
+      return { 
+        status: 200, 
+        success: true, 
+        message: "Your account is active.",
+        user: {
+          _id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          profileImage: user.profileImage,
+          role: user.role,
+          phone: user.phone,
+          phoneTwo: user.phoneTwo,
+          gender: user.gender,
+          nationality: user.nationality,
+          dob: user.dob,
+          linkedInUsername: user.linkedInUsername,
+          portfolioUrl: user.portfolioUrl,
+          resume: user.resume,
+          professionalStatus: user.professionalStatus
+        }
+      };
     }
-
   }
 }
 

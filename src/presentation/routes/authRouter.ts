@@ -21,8 +21,8 @@ router.patch('/update-password', authController.updatePassword);
 
 router.get('/checkUserStatus',authMiddleware, authController.checkUserStatus);
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 
-router.get('/google/callback',passport.authenticate('google', { failureRedirect: '/login' }),authController.googleCallback);
+router.get('/google/callback',passport.authenticate('google', { failureRedirect: '/login', session: false }),authController.googleCallback);
 
 export default router;

@@ -185,11 +185,12 @@ export class AuthController {
         return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
       }
 
-      const user = (req.user as DecodedUser);
+      const user = (req.user as any);
 
       const token = JWTService.generateToken({
         email: user.email,
-        role: user.role
+        role: user.role,
+        userId: user._id || user.id
       });
 
       res.cookie("token", token, {
