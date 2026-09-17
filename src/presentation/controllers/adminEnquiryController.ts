@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminGetEnquiryAnalyticsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
@@ -10,8 +10,15 @@ export class AdminEnquiryController {
     private getAllEnquiriesUseCase: AdminGetAllEnquiriesUseCase,
     private updateEnquiryStatusUseCase: AdminUpdateEnquiryStatusUseCase,
     private deleteEnquiryUseCase: AdminDeleteEnquiryUseCase,
-    private updateEnquiryAccountUseCase: AdminUpdateEnquiryAccountUseCase
-  ) {}
+    private updateEnquiryAccountUseCase: AdminUpdateEnquiryAccountUseCase,
+    private getEnquiryAnalyticsUseCase: AdminGetEnquiryAnalyticsUseCase
+  ) {
+    this.getAllEnquiries = this.getAllEnquiries.bind(this);
+    this.updateEnquiryStatus = this.updateEnquiryStatus.bind(this);
+    this.deleteEnquiry = this.deleteEnquiry.bind(this);
+    this.updateEnquiryAccount = this.updateEnquiryAccount.bind(this);
+    this.getEnquiryAnalytics = this.getEnquiryAnalytics.bind(this);
+  }
 
   async getAllEnquiries(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -56,6 +63,18 @@ export class AdminEnquiryController {
       const enquiryId = new Types.ObjectId(req.params.id);
       const { account } = req.body;
       const result = await this.updateEnquiryAccountUseCase.execute({ enquiryId, account: account ?? null });
+      res.status(200).json(result);
+    } catch (error) {
+      HandleError.handle(error, res);
+    }
+  }
+
+  async getEnquiryAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const period = (req.query.period as 'weekly' | 'monthly') || 'weekly';
+      const status = req.query.status as string | undefined;
+
+      const result = await this.getEnquiryAnalyticsUseCase.execute(period, status);
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);

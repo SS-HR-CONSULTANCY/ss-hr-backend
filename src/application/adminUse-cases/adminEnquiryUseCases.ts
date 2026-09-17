@@ -67,3 +67,20 @@ export class AdminUpdateEnquiryAccountUseCase {
     }
   }
 }
+
+export class AdminGetEnquiryAnalyticsUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute(period: 'weekly' | 'monthly', status?: string) {
+    try {
+      const data = await this.enquiryRepository.getEnquiryStatsByPeriod(period, status);
+      return {
+        success: true,
+        message: "Enquiry analytics retrieved successfully",
+        data
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to get enquiry analytics");
+    }
+  }
+}

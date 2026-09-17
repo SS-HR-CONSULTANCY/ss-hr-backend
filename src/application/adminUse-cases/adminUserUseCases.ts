@@ -385,3 +385,32 @@ export class GetOverviewGraphDataUseCase {
       }
   }
 }
+
+export class GetComprehensiveOverviewUseCase {
+  constructor(
+    private userRepository: UserRepositoryImpl,
+    private enquiryRepository: any // Typing as any for now, or we can import EnquiryRepositoryImpl
+  ) {}
+
+  async execute(): Promise<ApiResponse<any>> {
+    try {
+      const [weeklyRegistrations, monthlyRegistrations, enquiryStatusCounts] = await Promise.all([
+        this.userRepository.getRegistrationStatsByPeriod('weekly'),
+        this.userRepository.getRegistrationStatsByPeriod('monthly'),
+        this.enquiryRepository.getEnquiryStatusCounts()
+      ]);
+
+      return {
+        success: true,
+        message: "Comprehensive overview data retrieved successfully",
+        data: {
+          weeklyRegistrations,
+          monthlyRegistrations,
+          enquiryStatusCounts
+        }
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to get comprehensive overview data");
+    }
+  }
+}

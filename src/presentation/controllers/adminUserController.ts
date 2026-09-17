@@ -9,12 +9,13 @@ import { AddressRepositoryImpl } from '../../infrastructure/database/address/add
 import { SignedUrlRepositoryImpl } from "../../infrastructure/database/signedUrl/signedUrlRepositoryImpl";
 import { CareerDataRepositoryImpl } from '../../infrastructure/database/careerData/careerDataRepositoryImpl';
 import { GetAllUsersForChatSideBarUseCase } from "../../application/commonUse-cases/getAllUsersForChatSidebarUseCase";
-import { CreateUserByAdminUseCase, UpdateUserUseCase, DeleteUserUseCase, GetUserByIdUseCase, GetAllUsersUseCase, GetUserStatsUseCase, AdminFetchUserDetailsUseCase, GetUserGraphDataUseCase, GetOverviewStatsUseCase, GetOverviewGraphDataUseCase } from '../../application/adminUse-cases/adminUserUseCases';
+import { CreateUserByAdminUseCase, UpdateUserUseCase, DeleteUserUseCase, GetUserByIdUseCase, GetAllUsersUseCase, GetUserStatsUseCase, AdminFetchUserDetailsUseCase, GetUserGraphDataUseCase, GetOverviewStatsUseCase, GetOverviewGraphDataUseCase, GetComprehensiveOverviewUseCase } from '../../application/adminUse-cases/adminUserUseCases';
 import { ApplicationRepositoryImpl } from '../../infrastructure/database/application/applicationRepositoryImpl';
 import { PaymentRepositoryImpl } from '../../infrastructure/database/payment/paymentRepositoryImpl';
 import { PackageRepositoryImpl } from '../../infrastructure/database/package/packageRepositoryImpl';
 import { CompanyRepositoryImpl } from "../../infrastructure/database/company/companyRepositoryImpl";
 import { JobRepositoryImpl } from "../../infrastructure/database/job/jobRepositoryImpl";
+import { EnquiryRepositoryImpl } from '../../infrastructure/database/enquiry/enquiryRepositoryImpl';
 
 const userRepositoryImpl = new UserRepositoryImpl();
 const signedUrlRepositoryImpl = new SignedUrlRepositoryImpl();
@@ -26,6 +27,7 @@ const paymentRepositoryImpl = new PaymentRepositoryImpl();
 const packageRepositoryImpl = new PackageRepositoryImpl();
 const companyRepositoryImpl = new CompanyRepositoryImpl();
 const jobRepositoryImpl = new JobRepositoryImpl();
+const enquiryRepositoryImpl = new EnquiryRepositoryImpl();
 
 const getAllUsersForChatSideBarUseCase = new GetAllUsersForChatSideBarUseCase(userRepositoryImpl, signedUrlService);
 const createUserByAdminUseCase = new CreateUserByAdminUseCase(userRepositoryImpl);
@@ -38,6 +40,7 @@ const getUserGraphDataUseCase = new GetUserGraphDataUseCase(userRepositoryImpl);
 const adminFetchUserDetailsUseCase = new AdminFetchUserDetailsUseCase(userRepositoryImpl, addressRepositoryImpl, careerDataRepositoryImpl, signedUrlService)
 const getOverviewStatsUseCase = new GetOverviewStatsUseCase(userRepositoryImpl, packageRepositoryImpl, companyRepositoryImpl, jobRepositoryImpl, applicationRepositoryImpl);
 const getOverviewGraphDataUseCase = new GetOverviewGraphDataUseCase(userRepositoryImpl, applicationRepositoryImpl);
+const getComprehensiveOverviewUseCase = new GetComprehensiveOverviewUseCase(userRepositoryImpl, enquiryRepositoryImpl);
 
 export class AdminUserController {
     constructor(
@@ -51,7 +54,8 @@ export class AdminUserController {
         private getUserGraphDataUseCase: GetUserGraphDataUseCase,
         private adminFetchUserDetailsUseCase: AdminFetchUserDetailsUseCase,
         private getOverviewStatsUseCase: GetOverviewStatsUseCase,
-        private getOverviewGraphDataUseCase: GetOverviewGraphDataUseCase
+        private getOverviewGraphDataUseCase: GetOverviewGraphDataUseCase,
+        private getComprehensiveOverviewUseCase: GetComprehensiveOverviewUseCase
     ) {
         this.getUserForChatSidebar = this.getUserForChatSidebar.bind(this);
         this.createUser = this.createUser.bind(this);
@@ -64,6 +68,7 @@ export class AdminUserController {
         this.getUserFullDetails = this.getUserFullDetails.bind(this);
         this.getOverviewStats = this.getOverviewStats.bind(this);
         this.getOverviewGraphData = this.getOverviewGraphData.bind(this);
+        this.getComprehensiveOverview = this.getComprehensiveOverview.bind(this);
     }
 
     async getUserForChatSidebar(req: Request, res: Response) {
@@ -171,6 +176,15 @@ export class AdminUserController {
             HandleError.handle(error, res);
         }
     }
+    
+    async getComprehensiveOverview(req: Request, res: Response) {
+        try {
+            const result = await this.getComprehensiveOverviewUseCase.execute();
+            return res.status(200).json(result);
+        } catch (error) {
+            HandleError.handle(error, res);
+        }
+    }
 
 }
 
@@ -185,5 +199,6 @@ export const adminUserController = new AdminUserController(
     getUserGraphDataUseCase,
     adminFetchUserDetailsUseCase,
     getOverviewStatsUseCase,
-    getOverviewGraphDataUseCase
+    getOverviewGraphDataUseCase,
+    getComprehensiveOverviewUseCase
 );

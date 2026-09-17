@@ -23,5 +23,6 @@ router.get('/details/:id', authMiddleware, adminUserController.getUserFullDetail
 // Overview Routes
 router.get("/overview/stats", authMiddleware, adminUserController.getOverviewStats);
 router.get("/overview/graph-data", authMiddleware, adminUserController.getOverviewGraphData);
+router.get("/overview/comprehensive", authMiddleware, adminUserController.getComprehensiveOverview);
 
 export default router;

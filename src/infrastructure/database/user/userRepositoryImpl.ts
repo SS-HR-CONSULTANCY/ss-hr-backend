@@ -212,6 +212,25 @@ export class UserRepositoryImpl implements IUserRepository {
       throw new Error("Failed to get user graph data");
     }
   }
+
+  async getRegistrationStatsByPeriod(period: 'weekly' | 'monthly'): Promise<Array<{ _id: string; count: number }>> {
+    try {
+      const format = period === 'weekly' ? "%Y-%U" : "%Y-%m"; // %U for week of year, %m for month
+      
+      const result = await UserModel.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format, date: "$createdAt" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+      return result;
+    } catch (error) {
+      throw new Error("Failed to get registration stats by period");
+    }
+  }
 }
 
 

@@ -10,4 +10,6 @@ export interface IEnquiryRepository {
   updateEnquiryStatus(enquiryId: Types.ObjectId, status: EnquiryStatusType): Promise<Enquiry | null>;
   deleteEnquiry(enquiryId: Types.ObjectId): Promise<boolean>;
   getTotalCount(): Promise<number>;
+  getEnquiryStatusCounts(): Promise<Array<{ status: string; count: number }>>;
+  getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string): Promise<Array<{ date: string; count: number }>>;
 }

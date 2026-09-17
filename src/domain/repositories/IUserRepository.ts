@@ -35,4 +35,6 @@ export interface IUserRepository {
   getNewUsersCount(startDate: Date): Promise<number>;
 
   getUserGraphData(startDate: Date): Promise<any>;
+
+  getRegistrationStatsByPeriod(period: 'weekly' | 'monthly'): Promise<Array<{ _id: string; count: number }>>;
 }

@@ -98,4 +98,71 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     const deleted = await EnquiryModel.findByIdAndDelete(enquiryId);
     return !!deleted;
   }
+
+  async getEnquiryStatusCounts(): Promise<Array<{ status: string; count: number }>> {
+    const result = await EnquiryModel.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          status: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+    return result;
+  }
+
+  async getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string): Promise<Array<{ date: string; count: number }>> {
+    const matchStage: any = {};
+    if (status && status !== 'all') {
+      matchStage.status = status;
+    }
+
+    const now = new Date();
+    let format = "%Y-%m-%d";
+
+    if (period === 'weekly') {
+      // Current week from Monday
+      const dayOfWeek = now.getDay(); 
+      const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
+      monday.setHours(0,0,0,0);
+      matchStage.createdAt = { $gte: monday };
+    } else if (period === 'monthly') {
+      // Current month
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      firstDayOfMonth.setHours(0,0,0,0);
+      matchStage.createdAt = { $gte: firstDayOfMonth };
+    }
+
+    const pipeline: any[] = [];
+    
+    pipeline.push({ $match: matchStage });
+
+    pipeline.push(
+      {
+        $group: {
+          _id: { $dateToString: { format, date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          date: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
+    );
+
+    const result = await EnquiryModel.aggregate(pipeline);
+    return result;
+  }
 }
