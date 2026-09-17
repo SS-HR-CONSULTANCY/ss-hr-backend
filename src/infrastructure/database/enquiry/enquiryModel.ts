@@ -21,7 +21,7 @@ const enquirySchema = new Schema<IEnquiry>({
   phone: { type: String, default: "" },
   subject: { type: String, required: true },
   message: { type: String, required: true },
-  status: { type: String, enum: ['pending', 'contacted', 'under_processing', 'delivered'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'contacted', 'need_follow_up', 'processing_application', 'completed'], default: 'pending' },
   account: { type: String, default: null },
 }, { timestamps: true });
 

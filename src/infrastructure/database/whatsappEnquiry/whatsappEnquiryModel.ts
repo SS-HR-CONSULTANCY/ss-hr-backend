@@ -16,7 +16,7 @@ const whatsappEnquirySchema = new Schema<IWhatsappEnquiry>({
   name: { type: String, required: true },
   contactNumber: { type: String, required: true },
   subject: { type: String, required: true },
-  status: { type: String, enum: ['pending', 'contacted', 'under_processing', 'delivered'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'contacted', 'need_follow_up', 'processing_application', 'completed'], default: 'pending' },
   date: { type: Date, required: true, default: Date.now },
   account: { type: String, default: null },
 }, { timestamps: true });

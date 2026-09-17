@@ -11,5 +11,5 @@ export const createEnquirySchema = z.object({
 });
 
 export const updateEnquiryStatusSchema = z.object({
-  status: z.enum(["pending", "contacted", "under_processing", "delivered"] as [string, ...string[]]),
+  status: z.enum(["pending", "contacted", "need_follow_up", "processing_application", "completed"] as [string, ...string[]]),
 });
