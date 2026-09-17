@@ -53,3 +53,17 @@ export class AdminDeleteEnquiryUseCase {
     }
   }
 }
+
+export class AdminUpdateEnquiryAccountUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute({ enquiryId, account }: { enquiryId: any; account: string | null }) {
+    try {
+      const updated = await this.enquiryRepository.updateEnquiryAccount(enquiryId, account);
+      if (!updated) throw new Error("Enquiry not found");
+      return { success: true, message: "Enquiry account updated successfully" };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to update enquiry account");
+    }
+  }
+}

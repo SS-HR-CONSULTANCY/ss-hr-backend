@@ -16,7 +16,8 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
       doc.status,
       doc.date,
       doc.createdAt,
-      doc.updatedAt
+      doc.updatedAt,
+      doc.account,
     );
   }
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
@@ -9,7 +9,8 @@ export class AdminEnquiryController {
   constructor(
     private getAllEnquiriesUseCase: AdminGetAllEnquiriesUseCase,
     private updateEnquiryStatusUseCase: AdminUpdateEnquiryStatusUseCase,
-    private deleteEnquiryUseCase: AdminDeleteEnquiryUseCase
+    private deleteEnquiryUseCase: AdminDeleteEnquiryUseCase,
+    private updateEnquiryAccountUseCase: AdminUpdateEnquiryAccountUseCase
   ) {}
 
   async getAllEnquiries(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -44,6 +45,17 @@ export class AdminEnquiryController {
     try {
       const enquiryId = req.params.id;
       const result = await this.deleteEnquiryUseCase.execute(enquiryId);
+      res.status(200).json(result);
+    } catch (error) {
+      HandleError.handle(error, res);
+    }
+  }
+
+  async updateEnquiryAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const enquiryId = new Types.ObjectId(req.params.id);
+      const { account } = req.body;
+      const result = await this.updateEnquiryAccountUseCase.execute({ enquiryId, account: account ?? null });
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);

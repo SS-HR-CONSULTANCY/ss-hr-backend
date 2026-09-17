@@ -7,6 +7,7 @@ export interface CreateWhatsappEnquiryRequest {
   subject: string;
   date?: Date | string;
   status?: EnquiryStatusType;
+  account?: string;
 }
 
 export interface UpdateWhatsappEnquiryRequest {
@@ -15,6 +16,7 @@ export interface UpdateWhatsappEnquiryRequest {
   subject?: string;
   date?: Date | string;
   status?: EnquiryStatusType;
+  account?: string;
 }
 
 export interface GetAllWhatsappEnquiriesResponse {

@@ -9,6 +9,7 @@ export interface IEnquiry extends Document {
   subject: string;
   message: string;
   status: EnquiryStatusType;
+  account?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const enquirySchema = new Schema<IEnquiry>({
   subject: { type: String, required: true },
   message: { type: String, required: true },
   status: { type: String, enum: ['pending', 'contacted', 'under_processing', 'delivered'], default: 'pending' },
+  account: { type: String, default: null },
 }, { timestamps: true });
 
 export const EnquiryModel = mongoose.model<IEnquiry>('Enquiry', enquirySchema);

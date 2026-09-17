@@ -10,6 +10,7 @@ export class WhatsappEnquiry {
     public status: EnquiryStatusType,
     public date: Date,
     public createdAt?: Date,
-    public updatedAt?: Date
+    public updatedAt?: Date,
+    public account?: string,
   ) {}
 }

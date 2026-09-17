@@ -14,5 +14,6 @@ export class Enquiry {
     public readonly status: EnquiryStatusType,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly account?: string,
   ) {}
 }

@@ -6,6 +6,7 @@ export const createWhatsappEnquirySchema = z.object({
   subject: z.string().min(2, "Subject is required"),
   date: z.string().or(z.date()).optional(),
   status: z.enum(["pending", "contacted", "under_processing", "delivered"] as [string, ...string[]]).optional(),
+  account: z.string().optional().nullable(),
 });
 
 export const updateWhatsappEnquirySchema = z.object({
@@ -14,6 +15,7 @@ export const updateWhatsappEnquirySchema = z.object({
   subject: z.string().min(2, "Subject is required").optional(),
   date: z.string().or(z.date()).optional(),
   status: z.enum(["pending", "contacted", "under_processing", "delivered"] as [string, ...string[]]).optional(),
+  account: z.string().optional().nullable(),
 });
 
 export const updateWhatsappEnquiryStatusSchema = z.object({
