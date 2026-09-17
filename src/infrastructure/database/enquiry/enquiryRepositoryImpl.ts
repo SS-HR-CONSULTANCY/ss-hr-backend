@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { Enquiry } from "../../../domain/entities/enquiry";
+import { EnquiryStatusType, Enquiry } from "../../../domain/entities/enquiry";
 import { IEnquiryRepository } from "../../../domain/repositories/IEnquiryRepository";
 import { EnquiryModel, IEnquiry } from "./enquiryModel";
 import { ApiPaginationRequest } from "../../dtos/common.dts";
@@ -68,7 +68,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return this.mapToEntity(enquiry);
   }
 
-  async updateEnquiryStatus(enquiryId: Types.ObjectId, status: "unread" | "read"): Promise<Enquiry | null> {
+  async updateEnquiryStatus(enquiryId: Types.ObjectId, status: EnquiryStatusType): Promise<Enquiry | null> {
     const updated = await EnquiryModel.findByIdAndUpdate(
       enquiryId,
       { $set: { status } },

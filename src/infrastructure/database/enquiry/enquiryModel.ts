@@ -20,7 +20,7 @@ const enquirySchema = new Schema<IEnquiry>({
   phone: { type: String, default: "" },
   subject: { type: String, required: true },
   message: { type: String, required: true },
-  status: { type: String, enum: ['unread', 'read'], default: 'unread' },
+  status: { type: String, enum: ['pending', 'contacted', 'under_processing', 'delivered'], default: 'pending' },
 }, { timestamps: true });
 
 export const EnquiryModel = mongoose.model<IEnquiry>('Enquiry', enquirySchema);

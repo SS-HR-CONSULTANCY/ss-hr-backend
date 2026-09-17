@@ -3,6 +3,7 @@ import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDele
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
+import { EnquiryStatusType } from "../../domain/entities/enquiry";
 
 export class AdminEnquiryController {
   constructor(
@@ -30,7 +31,7 @@ export class AdminEnquiryController {
 
       const result = await this.updateEnquiryStatusUseCase.execute({
         enquiryId,
-        status: validatedData.status as "unread" | "read",
+        status: validatedData.status as EnquiryStatusType,
       });
 
       res.status(200).json(result);

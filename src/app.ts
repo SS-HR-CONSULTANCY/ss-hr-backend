@@ -22,6 +22,7 @@ import adminTestimonialRouter from './presentation/routes/adminTestimonialRouter
 import adminApplicationRouter from './presentation/routes/adminApplicationRouter';
 import enquiryRouter from './presentation/routes/enquiryRouter';
 import adminEnquiryRouter from './presentation/routes/adminEnquiryRouter';
+import adminWhatsappEnquiryRouter from './presentation/routes/adminWhatsappEnquiryRouter';
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use('/api/admin/payments', adminPaymentRouter);
 app.use('/api/admin/applications', adminApplicationRouter);
 app.use('/api/enquiry', enquiryRouter);
 app.use('/api/admin/enquiries', adminEnquiryRouter);
+app.use('/api/admin/whatsapp-enquiries', adminWhatsappEnquiryRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
