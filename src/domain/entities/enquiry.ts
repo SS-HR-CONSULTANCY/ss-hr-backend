@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export type EnquiryStatusType = "pending" | "contacted" | "need_follow_up" | "processing_application" | "completed";
+export type EnquiryStatusType = "pending" | "contacted" | "need_follow_up" | "not_interested" | "processing_application" | "completed" | "rejected_application";
 
 export class Enquiry {
   constructor(
