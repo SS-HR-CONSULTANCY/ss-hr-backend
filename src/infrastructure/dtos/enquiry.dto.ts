@@ -6,7 +6,7 @@ export interface CreateEnquiryRequest {
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
+  phone: string;
   subject: string;
   message: string;
 }
