@@ -4,6 +4,7 @@ import { IEnquiryRepository } from "../../../domain/repositories/IEnquiryReposit
 import { EnquiryModel, IEnquiry } from "./enquiryModel";
 import { ApiPaginationRequest } from "../../dtos/common.dts";
 import { CreateEnquiryRequest, GetAllEnquiriesResponse } from "../../dtos/enquiry.dto";
+import { WhatsappEnquiryModel } from "../whatsappEnquiry/whatsappEnquiryModel";
 
 export class EnquiryRepositoryImpl implements IEnquiryRepository {
   private mapToEntity(enquiry: IEnquiry): Enquiry {
@@ -100,7 +101,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
   }
 
   async getEnquiryStatusCounts(): Promise<Array<{ status: string; count: number }>> {
-    const result = await EnquiryModel.aggregate([
+    const pipeline = [
       {
         $group: {
           _id: "$status",
@@ -114,8 +115,18 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
           _id: 0
         }
       }
+    ];
+    const [result1, result2] = await Promise.all([
+      EnquiryModel.aggregate(pipeline),
+      WhatsappEnquiryModel.aggregate(pipeline)
     ]);
-    return result;
+    
+    const merged = new Map<string, number>();
+    for (const item of [...result1, ...result2]) {
+      merged.set(item.status, (merged.get(item.status) || 0) + item.count);
+    }
+    
+    return Array.from(merged.entries()).map(([status, count]) => ({ status, count }));
   }
 
   async getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string): Promise<Array<{ date: string; count: number }>> {
@@ -142,9 +153,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     }
 
     const pipeline: any[] = [];
-    
     pipeline.push({ $match: matchStage });
-
     pipeline.push(
       {
         $group: {
@@ -162,7 +171,53 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       }
     );
 
-    const result = await EnquiryModel.aggregate(pipeline);
-    return result;
+    const whatsappMatchStage: any = {};
+    if (status && status !== 'all') {
+      whatsappMatchStage.status = status;
+    }
+    if (period === 'weekly') {
+      const dayOfWeek = now.getDay(); 
+      const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
+      monday.setHours(0,0,0,0);
+      whatsappMatchStage.date = { $gte: monday };
+    } else if (period === 'monthly') {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      firstDayOfMonth.setHours(0,0,0,0);
+      whatsappMatchStage.date = { $gte: firstDayOfMonth };
+    }
+
+    const whatsappPipeline: any[] = [];
+    whatsappPipeline.push({ $match: whatsappMatchStage });
+    whatsappPipeline.push(
+      {
+        $group: {
+          _id: { $dateToString: { format, date: "$date" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          date: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
+    );
+
+    const [result1, result2] = await Promise.all([
+      EnquiryModel.aggregate(pipeline),
+      WhatsappEnquiryModel.aggregate(whatsappPipeline)
+    ]);
+    
+    const merged = new Map<string, number>();
+    for (const item of [...result1, ...result2]) {
+      merged.set(item.date, (merged.get(item.date) || 0) + item.count);
+    }
+    
+    return Array.from(merged.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 }
