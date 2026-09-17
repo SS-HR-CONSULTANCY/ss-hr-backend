@@ -81,4 +81,9 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
   async getTotalCount(): Promise<number> {
     return await EnquiryModel.countDocuments();
   }
+
+  async deleteEnquiry(enquiryId: Types.ObjectId): Promise<boolean> {
+    const deleted = await EnquiryModel.findByIdAndDelete(enquiryId);
+    return !!deleted;
+  }
 }

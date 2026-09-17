@@ -39,3 +39,17 @@ export class AdminUpdateEnquiryStatusUseCase {
     }
   }
 }
+
+export class AdminDeleteEnquiryUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute(enquiryId: string) {
+    try {
+      const deleted = await this.enquiryRepository.deleteEnquiry(enquiryId as any);
+      if (!deleted) throw new Error("Enquiry not found or already deleted");
+      return { success: true, message: "Enquiry deleted successfully" };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to delete enquiry");
+    }
+  }
+}

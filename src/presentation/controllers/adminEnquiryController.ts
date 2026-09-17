@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
@@ -7,7 +7,8 @@ import { HandleError } from "../../infrastructure/error/error";
 export class AdminEnquiryController {
   constructor(
     private getAllEnquiriesUseCase: AdminGetAllEnquiriesUseCase,
-    private updateEnquiryStatusUseCase: AdminUpdateEnquiryStatusUseCase
+    private updateEnquiryStatusUseCase: AdminUpdateEnquiryStatusUseCase,
+    private deleteEnquiryUseCase: AdminDeleteEnquiryUseCase
   ) {}
 
   async getAllEnquiries(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -32,6 +33,16 @@ export class AdminEnquiryController {
         status: validatedData.status as "unread" | "read",
       });
 
+      res.status(200).json(result);
+    } catch (error) {
+      HandleError.handle(error, res);
+    }
+  }
+
+  async deleteEnquiry(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const enquiryId = req.params.id;
+      const result = await this.deleteEnquiryUseCase.execute(enquiryId);
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);

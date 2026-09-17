@@ -8,5 +8,6 @@ export interface IEnquiryRepository {
   findAllEnquiries(params: ApiPaginationRequest): Promise<Omit<GetAllEnquiriesResponse, 'success' | 'message'>>;
   findEnquiryById(enquiryId: Types.ObjectId): Promise<Enquiry | null>;
   updateEnquiryStatus(enquiryId: Types.ObjectId, status: "unread" | "read"): Promise<Enquiry | null>;
+  deleteEnquiry(enquiryId: Types.ObjectId): Promise<boolean>;
   getTotalCount(): Promise<number>;
 }

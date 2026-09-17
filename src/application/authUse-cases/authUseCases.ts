@@ -216,7 +216,25 @@ export class CheckUserStatusUseCase {
   constructor(private userRepository: UserRepositoryImpl) { }
 
   async execute(data: CheckUserStatusRequest): Promise<CheckUserStatusResponse> {
-    const { id } = data;
+    const { id, role } = data;
+
+    if (role === Role.Admin || role === "admin") {
+      return { 
+        status: 200, 
+        success: true, 
+        message: "Your account is active.",
+        user: {
+          _id: "admin-id" as any,
+          fullName: "Admin",
+          email: adminConfig.adminEmail,
+          role: role,
+        } as any
+      };
+    }
+
+    if (!id) {
+       return { status: 404, success: false, message: "User ID missing." };
+    }
 
     const user = await this.userRepository.findUserById(new Types.ObjectId(id));
     if (!user) {
