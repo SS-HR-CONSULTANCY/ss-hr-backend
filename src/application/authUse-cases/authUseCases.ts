@@ -140,10 +140,9 @@ export class LoginUseCase {
 
       let user: User | null = null;
 
-      if (role === LimitedRole.User || role === LimitedRole.Admin) {
-
+      if (role === LimitedRole.User) {
         user = await this.userRepositoryImpl.findUserByEmailWithRole(email, role);
-      } else if (role === Role.SystemAdmin) {
+      } else if (role === Role.Admin) {
         if (email !== adminConfig.adminEmail || password !== adminConfig.adminPassword) {
           throw new Error("Invalid credentials.");
         }

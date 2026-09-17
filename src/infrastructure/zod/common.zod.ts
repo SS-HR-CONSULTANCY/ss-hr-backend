@@ -5,7 +5,6 @@ import { REGEX_PROFESSIONAL_STATUS, REGEX_PLACE, REGEX_COUNTRY, REGEX_FEATURE, R
 export enum Role {
   User = "user",
   Admin = "admin",
-  SystemAdmin = "systemAdmin",
 }
 
 export const roleSchema = z.nativeEnum(Role);
@@ -13,7 +12,6 @@ export type RoleType = z.infer<typeof roleSchema>;
 
 export enum LimitedRole {
   User = "user",
-  Admin = "admin",
 }
 
 export const limitedRoleSchema = z.nativeEnum(LimitedRole);

@@ -9,5 +9,5 @@ export const createAdminZodSchema = z.object({
     password,
     phone,
     role: limitedRoleSchema,
-    createrRole: enumField("creatorRole", ["systemAdmin", "admin"])
+    createrRole: enumField("creatorRole", ["admin"])
 });
