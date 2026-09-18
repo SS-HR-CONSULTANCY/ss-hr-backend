@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AdminEnquiryController } from "../controllers/adminEnquiryController";
 import { EnquiryRepositoryImpl } from "../../infrastructure/database/enquiry/enquiryRepositoryImpl";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -13,12 +13,14 @@ const deleteEnquiryUseCase = new AdminDeleteEnquiryUseCase(enquiryRepository);
 const updateEnquiryAccountUseCase = new AdminUpdateEnquiryAccountUseCase(enquiryRepository);
 const updateEnquiryCategoryUseCase = new AdminUpdateEnquiryCategoryUseCase(enquiryRepository);
 const getEnquiryAnalyticsUseCase = new AdminGetEnquiryAnalyticsUseCase(enquiryRepository);
-const adminEnquiryController = new AdminEnquiryController(getAllEnquiriesUseCase, updateEnquiryStatusUseCase, deleteEnquiryUseCase, updateEnquiryAccountUseCase, updateEnquiryCategoryUseCase, getEnquiryAnalyticsUseCase);
+const getEnquiryStatusDistributionUseCase = new AdminGetEnquiryStatusDistributionUseCase(enquiryRepository);
+const adminEnquiryController = new AdminEnquiryController(getAllEnquiriesUseCase, updateEnquiryStatusUseCase, deleteEnquiryUseCase, updateEnquiryAccountUseCase, updateEnquiryCategoryUseCase, getEnquiryAnalyticsUseCase, getEnquiryStatusDistributionUseCase);
 
 // Apply admin auth middleware to all routes
 router.use(authMiddleware);
 
 router.get("/analytics", adminEnquiryController.getEnquiryAnalytics);
+router.get("/status-distribution", adminEnquiryController.getEnquiryStatusDistribution);
 
 router.get("/", adminEnquiryController.getAllEnquiries);
 router.patch("/:id/status", adminEnquiryController.updateEnquiryStatus);

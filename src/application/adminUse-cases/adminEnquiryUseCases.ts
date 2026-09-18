@@ -85,6 +85,23 @@ export class AdminGetEnquiryAnalyticsUseCase {
   }
 }
 
+export class AdminGetEnquiryStatusDistributionUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute(period: 'weekly' | 'monthly') {
+    try {
+      const data = await this.enquiryRepository.getEnquiryStatusDistribution(period);
+      return {
+        success: true,
+        message: "Enquiry status distribution retrieved successfully",
+        data
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to get enquiry status distribution");
+    }
+  }
+}
+
 export class AdminUpdateEnquiryCategoryUseCase {
   constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
 

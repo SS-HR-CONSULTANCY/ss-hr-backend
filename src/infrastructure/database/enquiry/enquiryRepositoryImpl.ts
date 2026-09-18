@@ -141,6 +141,51 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return Array.from(merged.entries()).map(([status, count]) => ({ status, count }));
   }
 
+  async getEnquiryStatusDistribution(period: 'weekly' | 'monthly'): Promise<Array<{ status: string; count: number }>> {
+    const now = new Date();
+    const matchStage: any = {};
+    const whatsappMatchStage: any = {};
+
+    if (period === 'weekly') {
+      const dayOfWeek = now.getDay(); 
+      const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
+      monday.setHours(0,0,0,0);
+      matchStage.createdAt = { $gte: monday };
+      whatsappMatchStage.date = { $gte: monday };
+    } else if (period === 'monthly') {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      firstDayOfMonth.setHours(0,0,0,0);
+      matchStage.createdAt = { $gte: firstDayOfMonth };
+      whatsappMatchStage.date = { $gte: firstDayOfMonth };
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { status: "$_id", count: 1, _id: 0 } }
+    ];
+
+    const whatsappPipeline = [
+      { $match: whatsappMatchStage },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { status: "$_id", count: 1, _id: 0 } }
+    ];
+
+    const [result1, result2] = await Promise.all([
+      EnquiryModel.aggregate(pipeline),
+      WhatsappEnquiryModel.aggregate(whatsappPipeline)
+    ]);
+    
+    const merged = new Map<string, number>();
+    for (const item of [...result1, ...result2]) {
+      const status = item.status || 'unknown';
+      merged.set(status, (merged.get(status) || 0) + item.count);
+    }
+    
+    return Array.from(merged.entries()).map(([status, count]) => ({ status, count }));
+  }
+
   async getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string): Promise<Array<{ date: string; count: number }>> {
     const matchStage: any = {};
     if (status && status !== 'all') {
