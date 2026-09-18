@@ -76,7 +76,7 @@ export class OTPService {
             <body style="font-family: Helvetica, Arial, sans-serif; min-width: 1000px; overflow: auto; line-height: 2;">
                 <div style="margin: 50px auto; width: 70%; padding: 20px 0;">
                     <div style="border-bottom: 1px solid #eee;">
-                        <a href="#" style="font-size: 1.4em; color: #635BFF; text-decoration: none; font-weight: 600;">SS HR CONSULTANCY</a>
+                        <a href="#" style="font-size: 1.4em; color: #635BFF; text-decoration: none; font-weight: 600;">SS HR Consultancy</a>
                     </div>
                     <p style="font-size: 1.1em;">Hi,</p>
                     <p>Thank you for choosing Your Brand. Use the following OTP to complete your Sign-Up procedures. OTP is valid for 5 minutes.</p>
@@ -108,7 +108,7 @@ export class OTPService {
             <body style="font-family: Helvetica, Arial, sans-serif; min-width: 1000px; overflow: auto; line-height: 2;">
                 <div style="margin: 50px auto; width: 70%; padding: 20px 0;">
                     <div style="border-bottom: 1px solid #eee;">
-                        <a href="#" style="font-size: 1.4em; color: #635BFF; text-decoration: none; font-weight: 600;">SS HR CONSULTANCY</a>
+                        <a href="#" style="font-size: 1.4em; color: #635BFF; text-decoration: none; font-weight: 600;">SS HR Consultancy</a>
                     </div>
                     <p style="font-size: 1.1em;">Hi,</p>
                     <p>Your service registration with ss-hr-app  has been successfully approved.</p>
