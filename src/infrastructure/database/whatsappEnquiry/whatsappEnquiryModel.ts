@@ -8,6 +8,7 @@ export interface IWhatsappEnquiry extends Document {
   status: EnquiryStatusType;
   date: Date;
   account?: string;
+  category?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,7 @@ const whatsappEnquirySchema = new Schema<IWhatsappEnquiry>({
   status: { type: String, enum: ['pending', 'contacted', 'need_follow_up', 'not_interested', 'processing_application', 'completed', 'rejected_application'], default: 'pending' },
   date: { type: Date, required: true, default: Date.now },
   account: { type: String, default: null },
+  category: { type: String, default: null },
 }, { timestamps: true });
 
 export const WhatsappEnquiryModel = mongoose.model<IWhatsappEnquiry>('WhatsappEnquiry', whatsappEnquirySchema);

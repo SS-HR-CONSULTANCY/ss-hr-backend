@@ -9,6 +9,7 @@ export interface CreateEnquiryRequest {
   phone: string;
   subject: string;
   message: string;
+  category?: string;
 }
 
 export interface CreateEnquiryResponse extends ApiResponse {
@@ -38,6 +39,8 @@ export interface GetAllEnquiriesResponse {
     subject: string;
     message: string;
     status: EnquiryStatusType;
+    account?: string;
+    category?: string;
     createdAt: string;
     updatedAt: string;
   }[];

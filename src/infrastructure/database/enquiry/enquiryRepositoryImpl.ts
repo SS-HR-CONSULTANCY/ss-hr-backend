@@ -20,6 +20,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       enquiry.createdAt,
       enquiry.updatedAt,
       enquiry.account,
+      enquiry.category,
     );
   }
 
@@ -53,6 +54,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       message: enquiry.message,
       status: enquiry.status,
       account: enquiry.account,
+      category: enquiry.category,
       createdAt: (enquiry.createdAt as Date).toISOString(),
       updatedAt: (enquiry.updatedAt as Date).toISOString(),
     }));
@@ -85,6 +87,16 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     const updated = await EnquiryModel.findByIdAndUpdate(
       enquiryId,
       { $set: { account } },
+      { new: true }
+    );
+    if (!updated) return null;
+    return this.mapToEntity(updated);
+  }
+
+  async updateEnquiryCategory(enquiryId: Types.ObjectId, category: string | null): Promise<Enquiry | null> {
+    const updated = await EnquiryModel.findByIdAndUpdate(
+      enquiryId,
+      { $set: { category } },
       { new: true }
     );
     if (!updated) return null;

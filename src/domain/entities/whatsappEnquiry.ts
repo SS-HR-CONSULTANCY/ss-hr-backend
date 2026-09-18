@@ -12,5 +12,6 @@ export class WhatsappEnquiry {
     public createdAt?: Date,
     public updatedAt?: Date,
     public account?: string,
+    public category?: string,
   ) {}
 }

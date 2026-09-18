@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminGetEnquiryAnalyticsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
@@ -11,12 +11,14 @@ export class AdminEnquiryController {
     private updateEnquiryStatusUseCase: AdminUpdateEnquiryStatusUseCase,
     private deleteEnquiryUseCase: AdminDeleteEnquiryUseCase,
     private updateEnquiryAccountUseCase: AdminUpdateEnquiryAccountUseCase,
+    private updateEnquiryCategoryUseCase: AdminUpdateEnquiryCategoryUseCase,
     private getEnquiryAnalyticsUseCase: AdminGetEnquiryAnalyticsUseCase
   ) {
     this.getAllEnquiries = this.getAllEnquiries.bind(this);
     this.updateEnquiryStatus = this.updateEnquiryStatus.bind(this);
     this.deleteEnquiry = this.deleteEnquiry.bind(this);
     this.updateEnquiryAccount = this.updateEnquiryAccount.bind(this);
+    this.updateEnquiryCategory = this.updateEnquiryCategory.bind(this);
     this.getEnquiryAnalytics = this.getEnquiryAnalytics.bind(this);
   }
 
@@ -63,6 +65,17 @@ export class AdminEnquiryController {
       const enquiryId = new Types.ObjectId(req.params.id);
       const { account } = req.body;
       const result = await this.updateEnquiryAccountUseCase.execute({ enquiryId, account: account ?? null });
+      res.status(200).json(result);
+    } catch (error) {
+      HandleError.handle(error, res);
+    }
+  }
+
+  async updateEnquiryCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const enquiryId = new Types.ObjectId(req.params.id);
+      const { category } = req.body;
+      const result = await this.updateEnquiryCategoryUseCase.execute({ enquiryId, category: category ?? null });
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);

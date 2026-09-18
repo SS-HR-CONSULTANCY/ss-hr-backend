@@ -18,6 +18,7 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
       doc.createdAt,
       doc.updatedAt,
       doc.account,
+      doc.category,
     );
   }
 

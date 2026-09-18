@@ -84,3 +84,17 @@ export class AdminGetEnquiryAnalyticsUseCase {
     }
   }
 }
+
+export class AdminUpdateEnquiryCategoryUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute({ enquiryId, category }: { enquiryId: any; category: string | null }) {
+    try {
+      const updated = await this.enquiryRepository.updateEnquiryCategory(enquiryId, category);
+      if (!updated) throw new Error("Enquiry not found");
+      return { success: true, message: "Enquiry category updated successfully" };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to update enquiry category");
+    }
+  }
+}

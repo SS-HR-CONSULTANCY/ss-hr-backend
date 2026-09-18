@@ -15,5 +15,6 @@ export class Enquiry {
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public readonly account?: string,
+    public readonly category?: string,
   ) {}
 }
