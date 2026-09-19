@@ -16,5 +16,8 @@ export class Enquiry {
     public readonly updatedAt: Date,
     public readonly account?: string,
     public readonly category?: string,
+    public readonly comment?: string,
+    public readonly reminder?: Date,
+    public readonly statusHistory: Array<{ status: string; date: Date }> = [],
   ) {}
 }

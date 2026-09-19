@@ -21,6 +21,9 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       enquiry.updatedAt,
       enquiry.account,
       enquiry.category,
+      enquiry.comment,
+      enquiry.reminder,
+      enquiry.statusHistory
     );
   }
 
@@ -30,7 +33,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return this.mapToEntity(savedEnquiry);
   }
 
-  async findAllEnquiries({ page, limit, search }: ApiPaginationRequest): Promise<Omit<GetAllEnquiriesResponse, 'success' | 'message'>> {
+  async findAllEnquiries({ page, limit, search, status }: ApiPaginationRequest & { status?: string }): Promise<Omit<GetAllEnquiriesResponse, 'success' | 'message'>> {
     const skip = (page - 1) * limit;
 
     const query: any = {};
@@ -42,6 +45,9 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
         { email: searchRegex },
         { phone: searchRegex }
       ];
+    }
+    if (status && status !== 'all') {
+      query.status = status;
     }
 
     const [enquiries, totalCount] = await Promise.all([
@@ -87,7 +93,10 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
   async updateEnquiryStatus(enquiryId: Types.ObjectId, status: EnquiryStatusType): Promise<Enquiry | null> {
     const updated = await EnquiryModel.findByIdAndUpdate(
       enquiryId,
-      { $set: { status } },
+      { 
+        $set: { status },
+        $push: { statusHistory: { status, date: new Date() } }
+      },
       { new: true }
     );
     if (!updated) return null;
@@ -108,6 +117,25 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     const updated = await EnquiryModel.findByIdAndUpdate(
       enquiryId,
       { $set: { category } },
+      { new: true }
+    );
+    if (!updated) return null;
+    return this.mapToEntity(updated);
+  }
+
+  async updateEnquiryComment(enquiryId: Types.ObjectId, comment: string | null): Promise<Enquiry | null> {
+    const updated = await EnquiryModel.findByIdAndUpdate(
+      enquiryId,
+      { $set: { comment } },
+      { new: true }
+    );
+    if (!updated) return null;
+    return this.mapToEntity(updated);
+  }
+  async updateEnquiryReminder(enquiryId: Types.ObjectId, reminder: Date | null): Promise<Enquiry | null> {
+    const updated = await EnquiryModel.findByIdAndUpdate(
+      enquiryId,
+      { $set: { reminder } },
       { new: true }
     );
     if (!updated) return null;

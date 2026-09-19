@@ -13,6 +13,7 @@ export interface ApiPaginationRequest {
   toDate?: string;
   category?: string;
   search?: string;
+  status?: string;
 }
 
 export interface ApiResponse<T = unknown> extends CommonResponse {

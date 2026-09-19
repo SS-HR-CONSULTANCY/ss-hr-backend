@@ -10,6 +10,8 @@ export interface IEnquiryRepository {
   updateEnquiryStatus(enquiryId: Types.ObjectId, status: EnquiryStatusType): Promise<Enquiry | null>;
   updateEnquiryAccount(enquiryId: Types.ObjectId, account: string | null): Promise<Enquiry | null>;
   updateEnquiryCategory(enquiryId: Types.ObjectId, category: string | null): Promise<Enquiry | null>;
+  updateEnquiryComment(enquiryId: Types.ObjectId, comment: string | null): Promise<Enquiry | null>;
+  updateEnquiryReminder(enquiryId: Types.ObjectId, reminder: Date | null): Promise<Enquiry | null>;
   deleteEnquiry(enquiryId: Types.ObjectId): Promise<boolean>;
   getTotalCount(): Promise<number>;
   getEnquiryStatusCounts(): Promise<Array<{ status: string; count: number }>>;

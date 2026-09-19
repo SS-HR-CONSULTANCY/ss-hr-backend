@@ -11,6 +11,9 @@ export interface IEnquiry extends Document {
   status: EnquiryStatusType;
   account?: string;
   category?: string;
+  comment?: string;
+  reminder?: Date;
+  statusHistory: Array<{ status: string; date: Date }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +28,14 @@ const enquirySchema = new Schema<IEnquiry>({
   status: { type: String, enum: ['pending', 'contacted', 'need_follow_up', 'not_interested', 'processing_application', 'completed', 'rejected_application'], default: 'pending' },
   account: { type: String, default: null },
   category: { type: String, default: null },
+  comment: { type: String, default: null },
+  reminder: { type: Date, default: null },
+  statusHistory: { 
+    type: [{ status: String, date: Date }], 
+    default: function(this: any) {
+      return [{ status: this.status || 'pending', date: new Date() }];
+    }
+  },
 }, { timestamps: true });
 
 export const EnquiryModel = mongoose.model<IEnquiry>('Enquiry', enquirySchema);

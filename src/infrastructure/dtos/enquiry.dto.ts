@@ -41,6 +41,7 @@ export interface GetAllEnquiriesResponse {
     status: EnquiryStatusType;
     account?: string;
     category?: string;
+    statusHistory: Array<{ status: string; date: Date }>;
     createdAt: string;
     updatedAt: string;
   }[];

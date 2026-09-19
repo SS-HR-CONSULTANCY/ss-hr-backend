@@ -9,6 +9,9 @@ export interface IWhatsappEnquiry extends Document {
   date: Date;
   account?: string;
   category?: string;
+  comment?: string;
+  reminder?: Date;
+  statusHistory: Array<{ status: string; date: Date }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +24,14 @@ const whatsappEnquirySchema = new Schema<IWhatsappEnquiry>({
   date: { type: Date, required: true, default: Date.now },
   account: { type: String, default: null },
   category: { type: String, default: null },
+  comment: { type: String, default: null },
+  reminder: { type: Date, default: null },
+  statusHistory: { 
+    type: [{ status: String, date: Date }], 
+    default: function(this: any) {
+      return [{ status: this.status || 'pending', date: new Date() }];
+    }
+  },
 }, { timestamps: true });
 
 export const WhatsappEnquiryModel = mongoose.model<IWhatsappEnquiry>('WhatsappEnquiry', whatsappEnquirySchema);

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AdminEnquiryController } from "../controllers/adminEnquiryController";
 import { EnquiryRepositoryImpl } from "../../infrastructure/database/enquiry/enquiryRepositoryImpl";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase, AdminGetAccountLeadsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase, AdminGetAccountLeadsUseCase, AdminUpdateEnquiryCommentUseCase, AdminUpdateEnquiryReminderUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -16,6 +16,8 @@ const getEnquiryAnalyticsUseCase = new AdminGetEnquiryAnalyticsUseCase(enquiryRe
 const getEnquiryStatusDistributionUseCase = new AdminGetEnquiryStatusDistributionUseCase(enquiryRepository);
 const getEnquirySummaryStatsUseCase = new AdminGetEnquirySummaryStatsUseCase(enquiryRepository);
 const getAccountLeadsUseCase = new AdminGetAccountLeadsUseCase(enquiryRepository);
+const updateEnquiryCommentUseCase = new AdminUpdateEnquiryCommentUseCase(enquiryRepository);
+const updateEnquiryReminderUseCase = new AdminUpdateEnquiryReminderUseCase(enquiryRepository);
 
 const adminEnquiryController = new AdminEnquiryController(
   getAllEnquiriesUseCase,
@@ -26,7 +28,9 @@ const adminEnquiryController = new AdminEnquiryController(
   getEnquiryAnalyticsUseCase,
   getEnquiryStatusDistributionUseCase,
   getEnquirySummaryStatsUseCase,
-  getAccountLeadsUseCase
+  getAccountLeadsUseCase,
+  updateEnquiryCommentUseCase,
+  updateEnquiryReminderUseCase
 );
 
 router.get("/", authMiddleware, adminEnquiryController.getAllEnquiries);
@@ -37,6 +41,8 @@ router.get("/account/:accountName", authMiddleware, adminEnquiryController.getAc
 router.patch("/:id/status", authMiddleware, adminEnquiryController.updateEnquiryStatus);
 router.patch("/:id/account", authMiddleware, adminEnquiryController.updateEnquiryAccount);
 router.patch("/:id/category", authMiddleware, adminEnquiryController.updateEnquiryCategory);
+router.patch("/:id/comment", authMiddleware, adminEnquiryController.updateEnquiryComment);
+router.patch("/:id/reminder", authMiddleware, adminEnquiryController.updateEnquiryReminder);
 router.delete("/:id", authMiddleware, adminEnquiryController.deleteEnquiry);
 
 export default router;

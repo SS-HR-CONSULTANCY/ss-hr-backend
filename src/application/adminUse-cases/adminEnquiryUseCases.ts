@@ -5,9 +5,9 @@ import { GetAllEnquiriesResponse, UpdateEnquiryStatusRequest } from "../../infra
 export class AdminGetAllEnquiriesUseCase {
   constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
 
-  async execute(data: { page: number; limit: number }): Promise<GetAllEnquiriesResponse> {
+  async execute(data: { page: number; limit: number; search?: string; status?: string }): Promise<GetAllEnquiriesResponse> {
     try {
-      const result = await this.enquiryRepository.findAllEnquiries(data);
+      const result = await this.enquiryRepository.findAllEnquiries(data as any);
       return {
         success: true,
         message: "Enquiries retrieved successfully",
@@ -142,6 +142,34 @@ export class AdminGetAccountLeadsUseCase {
       return data;
     } catch (error) {
       throw handleUseCaseError(error || "Failed to get account leads");
+    }
+  }
+}
+
+export class AdminUpdateEnquiryCommentUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute({ enquiryId, comment }: { enquiryId: any; comment: string | null }) {
+    try {
+      const updated = await this.enquiryRepository.updateEnquiryComment(enquiryId, comment);
+      if (!updated) throw new Error("Enquiry not found");
+      return { success: true, message: "Enquiry comment updated successfully" };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to update enquiry comment");
+    }
+  }
+}
+
+export class AdminUpdateEnquiryReminderUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute({ enquiryId, reminder }: { enquiryId: any; reminder: Date | null }) {
+    try {
+      const updated = await this.enquiryRepository.updateEnquiryReminder(enquiryId, reminder);
+      if (!updated) throw new Error("Enquiry not found");
+      return { success: true, message: "Enquiry reminder updated successfully" };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to update enquiry reminder");
     }
   }
 }

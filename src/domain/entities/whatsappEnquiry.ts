@@ -11,7 +11,10 @@ export class WhatsappEnquiry {
     public date: Date,
     public createdAt?: Date,
     public updatedAt?: Date,
-    public account?: string,
-    public category?: string,
+    public readonly account?: string,
+    public readonly category?: string,
+    public readonly comment?: string,
+    public readonly reminder?: Date,
+    public readonly statusHistory: Array<{ status: string; date: Date }> = [],
   ) {}
 }

@@ -19,6 +19,9 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
       doc.updatedAt,
       doc.account,
       doc.category,
+      doc.comment,
+      doc.reminder,
+      doc.statusHistory,
     );
   }
 
@@ -41,6 +44,9 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
         { subject: searchRegex }
       ];
     }
+    if (params.status && params.status !== 'all') {
+      query.status = params.status;
+    }
 
     const [enquiries, totalCount] = await Promise.all([
       WhatsappEnquiryModel.find(query)
@@ -54,10 +60,10 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      data: enquiries.map(this.mapToEntity.bind(this)),
+      data: enquiries.map(doc => this.mapToEntity(doc)),
       totalCount,
-      totalPages,
       currentPage: page,
+      totalPages,
     };
   }
 
@@ -80,7 +86,30 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
   async updateEnquiryStatus(enquiryId: Types.ObjectId, status: EnquiryStatusType): Promise<WhatsappEnquiry | null> {
     const updated = await WhatsappEnquiryModel.findByIdAndUpdate(
       enquiryId,
-      { $set: { status } },
+      { 
+        $set: { status },
+        $push: { statusHistory: { status, date: new Date() } }
+      },
+      { new: true }
+    );
+    if (!updated) return null;
+    return this.mapToEntity(updated);
+  }
+
+  async updateEnquiryComment(enquiryId: Types.ObjectId, comment: string | null): Promise<WhatsappEnquiry | null> {
+    const updated = await WhatsappEnquiryModel.findByIdAndUpdate(
+      enquiryId,
+      { $set: { comment } },
+      { new: true }
+    );
+    if (!updated) return null;
+    return this.mapToEntity(updated);
+  }
+
+  async updateEnquiryReminder(enquiryId: Types.ObjectId, reminder: Date | null): Promise<WhatsappEnquiry | null> {
+    const updated = await WhatsappEnquiryModel.findByIdAndUpdate(
+      enquiryId,
+      { $set: { reminder } },
       { new: true }
     );
     if (!updated) return null;

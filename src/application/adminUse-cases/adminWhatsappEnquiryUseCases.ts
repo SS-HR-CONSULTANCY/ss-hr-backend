@@ -78,3 +78,35 @@ export class AdminDeleteWhatsappEnquiryUseCase {
     };
   }
 }
+
+export class AdminUpdateWhatsappEnquiryCommentUseCase {
+  constructor(private whatsappEnquiryRepository: IWhatsappEnquiryRepository) {}
+
+  async execute(params: { enquiryId: Types.ObjectId; comment: string | null }): Promise<{ success: boolean; message: string; data: WhatsappEnquiry }> {
+    const updated = await this.whatsappEnquiryRepository.updateEnquiryComment(params.enquiryId, params.comment);
+    if (!updated) {
+      throw new Error("Whatsapp enquiry not found");
+    }
+    return {
+      success: true,
+      message: "Whatsapp enquiry comment updated successfully",
+      data: updated,
+    };
+  }
+}
+
+export class AdminUpdateWhatsappEnquiryReminderUseCase {
+  constructor(private whatsappEnquiryRepository: IWhatsappEnquiryRepository) {}
+
+  async execute(params: { enquiryId: Types.ObjectId; reminder: Date | null }): Promise<{ success: boolean; message: string; data: WhatsappEnquiry }> {
+    const updated = await this.whatsappEnquiryRepository.updateEnquiryReminder(params.enquiryId, params.reminder);
+    if (!updated) {
+      throw new Error("Whatsapp enquiry not found");
+    }
+    return {
+      success: true,
+      message: "Whatsapp enquiry reminder updated successfully",
+      data: updated,
+    };
+  }
+}
