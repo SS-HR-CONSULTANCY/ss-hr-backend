@@ -72,6 +72,7 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       status: enquiry.status,
       account: enquiry.account,
       category: enquiry.category,
+      statusHistory: enquiry.statusHistory || [],
       createdAt: (enquiry.createdAt as Date).toISOString(),
       updatedAt: (enquiry.updatedAt as Date).toISOString(),
     }));
