@@ -71,9 +71,9 @@ export class AdminUpdateEnquiryAccountUseCase {
 export class AdminGetEnquiryAnalyticsUseCase {
   constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
 
-  async execute(period: 'weekly' | 'monthly', status?: string) {
+  async execute(period: 'weekly' | 'monthly', status?: string, category?: string) {
     try {
-      const data = await this.enquiryRepository.getEnquiryStatsByPeriod(period, status);
+      const data = await this.enquiryRepository.getEnquiryStatsByPeriod(period, status, category);
       return {
         success: true,
         message: "Enquiry analytics retrieved successfully",
@@ -112,6 +112,23 @@ export class AdminUpdateEnquiryCategoryUseCase {
       return { success: true, message: "Enquiry category updated successfully" };
     } catch (error) {
       throw handleUseCaseError(error || "Failed to update enquiry category");
+    }
+  }
+}
+
+export class AdminGetEnquirySummaryStatsUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute() {
+    try {
+      const data = await this.enquiryRepository.getSummaryStats();
+      return {
+        success: true,
+        message: "Enquiry summary stats retrieved successfully",
+        data
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to get enquiry summary stats");
     }
   }
 }

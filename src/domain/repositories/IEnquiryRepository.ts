@@ -12,5 +12,6 @@ export interface IEnquiryRepository {
   getTotalCount(): Promise<number>;
   getEnquiryStatusCounts(): Promise<Array<{ status: string; count: number }>>;
   getEnquiryStatusDistribution(period: 'weekly' | 'monthly'): Promise<Array<{ status: string; count: number }>>;
-  getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string): Promise<Array<{ date: string; count: number }>>;
+  getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string, category?: string): Promise<Array<{ date: string; count: number }>>;
+  getSummaryStats(): Promise<{ total: number; visitingPackage: number; inProgress: number; pending: number; completed: number }>;
 }

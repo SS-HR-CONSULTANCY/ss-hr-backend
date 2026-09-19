@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
@@ -13,7 +13,8 @@ export class AdminEnquiryController {
     private updateEnquiryAccountUseCase: AdminUpdateEnquiryAccountUseCase,
     private updateEnquiryCategoryUseCase: AdminUpdateEnquiryCategoryUseCase,
     private getEnquiryAnalyticsUseCase: AdminGetEnquiryAnalyticsUseCase,
-    private getEnquiryStatusDistributionUseCase: AdminGetEnquiryStatusDistributionUseCase
+    private getEnquiryStatusDistributionUseCase: AdminGetEnquiryStatusDistributionUseCase,
+    private getEnquirySummaryStatsUseCase: AdminGetEnquirySummaryStatsUseCase
   ) {
     this.getAllEnquiries = this.getAllEnquiries.bind(this);
     this.updateEnquiryStatus = this.updateEnquiryStatus.bind(this);
@@ -22,6 +23,7 @@ export class AdminEnquiryController {
     this.updateEnquiryCategory = this.updateEnquiryCategory.bind(this);
     this.getEnquiryAnalytics = this.getEnquiryAnalytics.bind(this);
     this.getEnquiryStatusDistribution = this.getEnquiryStatusDistribution.bind(this);
+    this.getEnquirySummaryStats = this.getEnquirySummaryStats.bind(this);
   }
 
   async getAllEnquiries(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -88,8 +90,9 @@ export class AdminEnquiryController {
     try {
       const period = (req.query.period as 'weekly' | 'monthly') || 'weekly';
       const status = req.query.status as string | undefined;
+      const category = req.query.category as string | undefined;
 
-      const result = await this.getEnquiryAnalyticsUseCase.execute(period, status);
+      const result = await this.getEnquiryAnalyticsUseCase.execute(period, status, category);
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);
@@ -101,6 +104,15 @@ export class AdminEnquiryController {
       const period = (req.query.period as 'weekly' | 'monthly') || 'weekly';
 
       const result = await this.getEnquiryStatusDistributionUseCase.execute(period);
+      res.status(200).json(result);
+    } catch (error) {
+      HandleError.handle(error, res);
+    }
+  }
+
+  async getEnquirySummaryStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await this.getEnquirySummaryStatsUseCase.execute();
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);

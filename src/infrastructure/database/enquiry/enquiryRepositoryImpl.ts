@@ -186,10 +186,13 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return Array.from(merged.entries()).map(([status, count]) => ({ status, count }));
   }
 
-  async getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string): Promise<Array<{ date: string; count: number }>> {
+  async getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string, category?: string): Promise<Array<{ date: string; count: number }>> {
     const matchStage: any = {};
     if (status && status !== 'all') {
       matchStage.status = status;
+    }
+    if (category && category !== 'all') {
+      matchStage.category = category;
     }
 
     const now = new Date();
@@ -231,6 +234,9 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     const whatsappMatchStage: any = {};
     if (status && status !== 'all') {
       whatsappMatchStage.status = status;
+    }
+    if (category && category !== 'all') {
+      whatsappMatchStage.category = category;
     }
     if (period === 'weekly') {
       const dayOfWeek = now.getDay(); 
@@ -276,5 +282,50 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return Array.from(merged.entries())
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async getSummaryStats(): Promise<{ total: number; visitingPackage: number; inProgress: number; pending: number; completed: number }> {
+    const pipeline = [
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          visitingPackage: {
+            $sum: { $cond: [{ $regexMatch: { input: { $ifNull: ["$category", ""] }, regex: /visiting package/i } }, 1, 0] }
+          },
+          pending: {
+            $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] }
+          },
+          completed: {
+            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] }
+          },
+          inProgress: {
+            $sum: {
+              $cond: [
+                { $and: [{ $ne: ["$status", "pending"] }, { $ne: ["$status", "completed"] }] },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ];
+
+    const [res1, res2] = await Promise.all([
+      EnquiryModel.aggregate(pipeline),
+      WhatsappEnquiryModel.aggregate(pipeline)
+    ]);
+
+    const d1 = res1[0] || { total: 0, visitingPackage: 0, inProgress: 0, pending: 0, completed: 0 };
+    const d2 = res2[0] || { total: 0, visitingPackage: 0, inProgress: 0, pending: 0, completed: 0 };
+
+    return {
+      total: d1.total + d2.total,
+      visitingPackage: d1.visitingPackage + d2.visitingPackage,
+      inProgress: d1.inProgress + d2.inProgress,
+      pending: d1.pending + d2.pending,
+      completed: d1.completed + d2.completed,
+    };
   }
 }

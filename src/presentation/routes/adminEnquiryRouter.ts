@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AdminEnquiryController } from "../controllers/adminEnquiryController";
 import { EnquiryRepositoryImpl } from "../../infrastructure/database/enquiry/enquiryRepositoryImpl";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -14,11 +14,13 @@ const updateEnquiryAccountUseCase = new AdminUpdateEnquiryAccountUseCase(enquiry
 const updateEnquiryCategoryUseCase = new AdminUpdateEnquiryCategoryUseCase(enquiryRepository);
 const getEnquiryAnalyticsUseCase = new AdminGetEnquiryAnalyticsUseCase(enquiryRepository);
 const getEnquiryStatusDistributionUseCase = new AdminGetEnquiryStatusDistributionUseCase(enquiryRepository);
-const adminEnquiryController = new AdminEnquiryController(getAllEnquiriesUseCase, updateEnquiryStatusUseCase, deleteEnquiryUseCase, updateEnquiryAccountUseCase, updateEnquiryCategoryUseCase, getEnquiryAnalyticsUseCase, getEnquiryStatusDistributionUseCase);
+const getEnquirySummaryStatsUseCase = new AdminGetEnquirySummaryStatsUseCase(enquiryRepository);
+const adminEnquiryController = new AdminEnquiryController(getAllEnquiriesUseCase, updateEnquiryStatusUseCase, deleteEnquiryUseCase, updateEnquiryAccountUseCase, updateEnquiryCategoryUseCase, getEnquiryAnalyticsUseCase, getEnquiryStatusDistributionUseCase, getEnquirySummaryStatsUseCase);
 
 // Apply admin auth middleware to all routes
 router.use(authMiddleware);
 
+router.get("/summary-stats", adminEnquiryController.getEnquirySummaryStats);
 router.get("/analytics", adminEnquiryController.getEnquiryAnalytics);
 router.get("/status-distribution", adminEnquiryController.getEnquiryStatusDistribution);
 
