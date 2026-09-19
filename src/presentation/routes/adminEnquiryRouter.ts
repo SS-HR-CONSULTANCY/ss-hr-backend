@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { AdminEnquiryController } from "../controllers/adminEnquiryController";
 import { EnquiryRepositoryImpl } from "../../infrastructure/database/enquiry/enquiryRepositoryImpl";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase, AdminGetAccountLeadsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
-
 const enquiryRepository = new EnquiryRepositoryImpl();
+
 const getAllEnquiriesUseCase = new AdminGetAllEnquiriesUseCase(enquiryRepository);
 const updateEnquiryStatusUseCase = new AdminUpdateEnquiryStatusUseCase(enquiryRepository);
 const deleteEnquiryUseCase = new AdminDeleteEnquiryUseCase(enquiryRepository);
@@ -15,20 +15,28 @@ const updateEnquiryCategoryUseCase = new AdminUpdateEnquiryCategoryUseCase(enqui
 const getEnquiryAnalyticsUseCase = new AdminGetEnquiryAnalyticsUseCase(enquiryRepository);
 const getEnquiryStatusDistributionUseCase = new AdminGetEnquiryStatusDistributionUseCase(enquiryRepository);
 const getEnquirySummaryStatsUseCase = new AdminGetEnquirySummaryStatsUseCase(enquiryRepository);
-const adminEnquiryController = new AdminEnquiryController(getAllEnquiriesUseCase, updateEnquiryStatusUseCase, deleteEnquiryUseCase, updateEnquiryAccountUseCase, updateEnquiryCategoryUseCase, getEnquiryAnalyticsUseCase, getEnquiryStatusDistributionUseCase, getEnquirySummaryStatsUseCase);
+const getAccountLeadsUseCase = new AdminGetAccountLeadsUseCase(enquiryRepository);
 
-// Apply admin auth middleware to all routes
-router.use(authMiddleware);
+const adminEnquiryController = new AdminEnquiryController(
+  getAllEnquiriesUseCase,
+  updateEnquiryStatusUseCase,
+  deleteEnquiryUseCase,
+  updateEnquiryAccountUseCase,
+  updateEnquiryCategoryUseCase,
+  getEnquiryAnalyticsUseCase,
+  getEnquiryStatusDistributionUseCase,
+  getEnquirySummaryStatsUseCase,
+  getAccountLeadsUseCase
+);
 
-router.get("/summary-stats", adminEnquiryController.getEnquirySummaryStats);
-router.get("/analytics", adminEnquiryController.getEnquiryAnalytics);
-router.get("/status-distribution", adminEnquiryController.getEnquiryStatusDistribution);
-
-router.get("/", adminEnquiryController.getAllEnquiries);
-router.patch("/:id/status", adminEnquiryController.updateEnquiryStatus);
-router.patch("/:id/account", adminEnquiryController.updateEnquiryAccount);
-router.patch("/:id/category", adminEnquiryController.updateEnquiryCategory);
-router.delete("/:id", adminEnquiryController.deleteEnquiry);
+router.get("/", authMiddleware, adminEnquiryController.getAllEnquiries);
+router.get("/analytics", authMiddleware, adminEnquiryController.getEnquiryAnalytics);
+router.get("/status-distribution", authMiddleware, adminEnquiryController.getEnquiryStatusDistribution);
+router.get("/summary-stats", authMiddleware, adminEnquiryController.getEnquirySummaryStats);
+router.get("/account/:accountName", authMiddleware, adminEnquiryController.getAccountLeads);
+router.patch("/:id/status", authMiddleware, adminEnquiryController.updateEnquiryStatus);
+router.patch("/:id/account", authMiddleware, adminEnquiryController.updateEnquiryAccount);
+router.patch("/:id/category", authMiddleware, adminEnquiryController.updateEnquiryCategory);
+router.delete("/:id", authMiddleware, adminEnquiryController.deleteEnquiry);
 
 export default router;
-

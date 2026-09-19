@@ -132,3 +132,16 @@ export class AdminGetEnquirySummaryStatsUseCase {
     }
   }
 }
+
+export class AdminGetAccountLeadsUseCase {
+  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+
+  async execute(accountName: string) {
+    try {
+      const data = await this.enquiryRepository.getEnquiriesByAccount(accountName);
+      return data;
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to get account leads");
+    }
+  }
+}

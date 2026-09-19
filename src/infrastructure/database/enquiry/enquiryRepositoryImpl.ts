@@ -302,7 +302,14 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
           inProgress: {
             $sum: {
               $cond: [
-                { $and: [{ $ne: ["$status", "pending"] }, { $ne: ["$status", "completed"] }] },
+                {
+                  $and: [
+                    { $ne: ["$status", "pending"] },
+                    { $ne: ["$status", "completed"] },
+                    { $ne: ["$status", "not_interested"] },
+                    { $ne: ["$status", "rejected_application"] }
+                  ]
+                },
                 1,
                 0
               ]
@@ -327,5 +334,34 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       pending: d1.pending + d2.pending,
       completed: d1.completed + d2.completed,
     };
+  }
+
+  async getEnquiriesByAccount(accountName: string): Promise<any[]> {
+    const web = await EnquiryModel.find({ account: accountName }).lean();
+    const wa = await WhatsappEnquiryModel.find({ account: accountName }).lean();
+
+    const formattedWeb = web.map(w => ({
+      _id: w._id.toString(),
+      name: `${w.firstName} ${w.lastName}`.trim(),
+      contactInfo: w.phone || w.email || 'N/A',
+      subject: w.subject || 'No Subject',
+      status: w.status,
+      category: w.category || 'N/A',
+      source: "Website",
+      createdAt: (w.createdAt as Date).toISOString()
+    }));
+
+    const formattedWa = wa.map(w => ({
+      _id: w._id.toString(),
+      name: w.name,
+      contactInfo: w.contactNumber,
+      subject: w.subject || 'WhatsApp Enquiry',
+      status: w.status,
+      category: w.category || 'N/A',
+      source: "WhatsApp",
+      createdAt: (w.createdAt as Date).toISOString()
+    }));
+
+    return [...formattedWeb, ...formattedWa].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 }

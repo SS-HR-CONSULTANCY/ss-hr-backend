@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
+import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase, AdminGetAccountLeadsUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { updateEnquiryStatusSchema } from "../../infrastructure/zod/enquiry.zod";
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
@@ -14,7 +14,8 @@ export class AdminEnquiryController {
     private updateEnquiryCategoryUseCase: AdminUpdateEnquiryCategoryUseCase,
     private getEnquiryAnalyticsUseCase: AdminGetEnquiryAnalyticsUseCase,
     private getEnquiryStatusDistributionUseCase: AdminGetEnquiryStatusDistributionUseCase,
-    private getEnquirySummaryStatsUseCase: AdminGetEnquirySummaryStatsUseCase
+    private getEnquirySummaryStatsUseCase: AdminGetEnquirySummaryStatsUseCase,
+    private getAccountLeadsUseCase: AdminGetAccountLeadsUseCase
   ) {
     this.getAllEnquiries = this.getAllEnquiries.bind(this);
     this.updateEnquiryStatus = this.updateEnquiryStatus.bind(this);
@@ -24,6 +25,7 @@ export class AdminEnquiryController {
     this.getEnquiryAnalytics = this.getEnquiryAnalytics.bind(this);
     this.getEnquiryStatusDistribution = this.getEnquiryStatusDistribution.bind(this);
     this.getEnquirySummaryStats = this.getEnquirySummaryStats.bind(this);
+    this.getAccountLeads = this.getAccountLeads.bind(this);
   }
 
   async getAllEnquiries(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -116,6 +118,19 @@ export class AdminEnquiryController {
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);
+    }
+  }
+
+  async getAccountLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { accountName } = req.params;
+      const data = await this.getAccountLeadsUseCase.execute(accountName);
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      next(error);
     }
   }
 }
