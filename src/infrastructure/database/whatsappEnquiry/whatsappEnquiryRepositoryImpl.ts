@@ -32,13 +32,23 @@ export class WhatsappEnquiryRepositoryImpl implements IWhatsappEnquiryRepository
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
 
+    const query: any = {};
+    if (params.search) {
+      const searchRegex = new RegExp(params.search, 'i');
+      query.$or = [
+        { name: searchRegex },
+        { contactNumber: searchRegex },
+        { subject: searchRegex }
+      ];
+    }
+
     const [enquiries, totalCount] = await Promise.all([
-      WhatsappEnquiryModel.find()
+      WhatsappEnquiryModel.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .exec(),
-      WhatsappEnquiryModel.countDocuments()
+      WhatsappEnquiryModel.countDocuments(query)
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);

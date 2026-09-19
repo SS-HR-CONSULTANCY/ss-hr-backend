@@ -30,16 +30,27 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return this.mapToEntity(savedEnquiry);
   }
 
-  async findAllEnquiries({ page, limit }: ApiPaginationRequest): Promise<Omit<GetAllEnquiriesResponse, 'success' | 'message'>> {
+  async findAllEnquiries({ page, limit, search }: ApiPaginationRequest): Promise<Omit<GetAllEnquiriesResponse, 'success' | 'message'>> {
     const skip = (page - 1) * limit;
 
+    const query: any = {};
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex }
+      ];
+    }
+
     const [enquiries, totalCount] = await Promise.all([
-      EnquiryModel.find()
+      EnquiryModel.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      EnquiryModel.countDocuments()
+      EnquiryModel.countDocuments(query)
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);

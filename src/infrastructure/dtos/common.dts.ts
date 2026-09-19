@@ -9,6 +9,10 @@ export interface CommonResponse {
 export interface ApiPaginationRequest {
   page: number;
   limit: number;
+  fromDate?: string;
+  toDate?: string;
+  category?: string;
+  search?: string;
 }
 
 export interface ApiResponse<T = unknown> extends CommonResponse {
