@@ -55,30 +55,14 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .exec(),
       EnquiryModel.countDocuments(query)
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);
 
-    const formattedData = enquiries.map((enquiry) => ({
-      _id: enquiry._id as Types.ObjectId,
-      firstName: enquiry.firstName,
-      lastName: enquiry.lastName,
-      email: enquiry.email,
-      phone: enquiry.phone,
-      subject: enquiry.subject,
-      message: enquiry.message,
-      status: enquiry.status,
-      account: enquiry.account,
-      category: enquiry.category,
-      statusHistory: enquiry.statusHistory || [],
-      createdAt: (enquiry.createdAt as Date).toISOString(),
-      updatedAt: (enquiry.updatedAt as Date).toISOString(),
-    }));
-
     return {
-      data: formattedData,
+      data: enquiries.map(doc => this.mapToEntity(doc)),
       totalCount,
       currentPage: page,
       totalPages,
