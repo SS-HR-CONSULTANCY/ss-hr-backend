@@ -11,14 +11,17 @@ import {
 } from "../../application/adminUse-cases/adminWhatsappEnquiryUseCases";
 import { WhatsappEnquiryRepositoryImpl } from "../../infrastructure/database/whatsappEnquiry/whatsappEnquiryRepositoryImpl";
 
+import { BillRepositoryImpl } from "../../infrastructure/database/bill/billRepositoryImpl";
+
 const adminWhatsappEnquiryRouter = express.Router();
 
 const repository = new WhatsappEnquiryRepositoryImpl();
+const billRepository = new BillRepositoryImpl();
 
 const createUseCase = new AdminCreateWhatsappEnquiryUseCase(repository);
 const getAllUseCase = new AdminGetAllWhatsappEnquiriesUseCase(repository);
 const updateUseCase = new AdminUpdateWhatsappEnquiryUseCase(repository);
-const updateStatusUseCase = new AdminUpdateWhatsappEnquiryStatusUseCase(repository);
+const updateStatusUseCase = new AdminUpdateWhatsappEnquiryStatusUseCase(repository, billRepository);
 const deleteUseCase = new AdminDeleteWhatsappEnquiryUseCase(repository);
 const updateCommentUseCase = new AdminUpdateWhatsappEnquiryCommentUseCase(repository);
 const updateReminderUseCase = new AdminUpdateWhatsappEnquiryReminderUseCase(repository);

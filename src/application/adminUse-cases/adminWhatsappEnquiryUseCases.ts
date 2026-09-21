@@ -48,13 +48,22 @@ export class AdminUpdateWhatsappEnquiryUseCase {
 }
 
 export class AdminUpdateWhatsappEnquiryStatusUseCase {
-  constructor(private whatsappEnquiryRepository: IWhatsappEnquiryRepository) {}
+  constructor(
+    private whatsappEnquiryRepository: IWhatsappEnquiryRepository,
+    private billRepository?: any // Using any to avoid circular deps/complex imports
+  ) {}
 
   async execute(params: { enquiryId: Types.ObjectId; status: EnquiryStatusType }): Promise<{ success: boolean; message: string; data: WhatsappEnquiry }> {
     const updated = await this.whatsappEnquiryRepository.updateEnquiryStatus(params.enquiryId, params.status);
     if (!updated) {
       throw new Error("Whatsapp enquiry not found");
     }
+
+    // Auto generate bill when status changed to completed
+    if (params.status === "completed" && this.billRepository) {
+      await this.billRepository.updateOrCreateBill(params.enquiryId.toString(), "WhatsApp", {});
+    }
+
     return {
       success: true,
       message: "Whatsapp enquiry status updated successfully",

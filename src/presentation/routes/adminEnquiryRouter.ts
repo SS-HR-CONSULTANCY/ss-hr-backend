@@ -4,11 +4,14 @@ import { EnquiryRepositoryImpl } from "../../infrastructure/database/enquiry/enq
 import { AdminGetAllEnquiriesUseCase, AdminUpdateEnquiryStatusUseCase, AdminDeleteEnquiryUseCase, AdminUpdateEnquiryAccountUseCase, AdminUpdateEnquiryCategoryUseCase, AdminGetEnquiryAnalyticsUseCase, AdminGetEnquiryStatusDistributionUseCase, AdminGetEnquirySummaryStatsUseCase, AdminGetAccountLeadsUseCase, AdminUpdateEnquiryCommentUseCase, AdminUpdateEnquiryReminderUseCase } from "../../application/adminUse-cases/adminEnquiryUseCases";
 import { authMiddleware } from "../middleware/authMiddleware";
 
+import { BillRepositoryImpl } from "../../infrastructure/database/bill/billRepositoryImpl";
+
 const router = Router();
 const enquiryRepository = new EnquiryRepositoryImpl();
+const billRepository = new BillRepositoryImpl();
 
 const getAllEnquiriesUseCase = new AdminGetAllEnquiriesUseCase(enquiryRepository);
-const updateEnquiryStatusUseCase = new AdminUpdateEnquiryStatusUseCase(enquiryRepository);
+const updateEnquiryStatusUseCase = new AdminUpdateEnquiryStatusUseCase(enquiryRepository, billRepository);
 const deleteEnquiryUseCase = new AdminDeleteEnquiryUseCase(enquiryRepository);
 const updateEnquiryAccountUseCase = new AdminUpdateEnquiryAccountUseCase(enquiryRepository);
 const updateEnquiryCategoryUseCase = new AdminUpdateEnquiryCategoryUseCase(enquiryRepository);

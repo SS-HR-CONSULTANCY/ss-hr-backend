@@ -20,7 +20,10 @@ export class AdminGetAllEnquiriesUseCase {
 }
 
 export class AdminUpdateEnquiryStatusUseCase {
-  constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
+  constructor(
+    private enquiryRepository: EnquiryRepositoryImpl,
+    private billRepository?: any // Using any to avoid importing and circular deps, we'll cast it in the router
+  ) {}
 
   async execute({ enquiryId, status }: UpdateEnquiryStatusRequest) {
     try {
@@ -29,6 +32,11 @@ export class AdminUpdateEnquiryStatusUseCase {
 
       const updated = await this.enquiryRepository.updateEnquiryStatus(enquiryId, status);
       if (!updated) throw new Error("Failed to update enquiry status");
+
+      // Auto generate bill when status changed to completed
+      if (status === "completed" && this.billRepository) {
+        await this.billRepository.updateOrCreateBill(enquiryId.toString(), "Website", {});
+      }
 
       return {
         success: true,
