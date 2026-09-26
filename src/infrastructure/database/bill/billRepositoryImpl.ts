@@ -70,6 +70,7 @@ export class BillRepositoryImpl {
         name: enq.name,
         phone: enq.phone,
         date: enq.date, // The date the enquiry was created
+        serviceStatus: enq.status || "processing_application",
         billId: bill?._id || null,
         invoiceNumber: bill?.invoiceNumber || null,
         currency: bill?.currency || "AED",
@@ -98,10 +99,19 @@ export class BillRepositoryImpl {
       invoiceAmount?: number;
       currency?: "AED" | "INR";
       status?: "pending" | "partially_paid" | "paid";
+      serviceStatus?: "processing_application" | "completed";
       comment?: string;
       dueDate?: Date;
     }
   ) {
+    if (data.serviceStatus) {
+      if (enquiryType === "Website") {
+        await EnquiryModel.findByIdAndUpdate(enquiryId, { status: data.serviceStatus });
+      } else if (enquiryType === "WhatsApp") {
+        await WhatsappEnquiryModel.findByIdAndUpdate(enquiryId, { status: data.serviceStatus });
+      }
+    }
+
     let bill = await BillModel.findOne({ enquiryId });
     if (!bill) {
       bill = new BillModel({
