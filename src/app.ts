@@ -26,6 +26,7 @@ import adminWhatsappEnquiryRouter from './presentation/routes/adminWhatsappEnqui
 import adminAccountRouter from './presentation/routes/adminAccountRouter';
 import adminCategoryRouter from './presentation/routes/adminCategoryRouter';
 import { adminBillRouter } from './presentation/routes/adminBillRouter';
+import { adminExpenseRouter } from './presentation/routes/adminExpenseRouter';
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use('/api/admin/whatsapp-enquiries', adminWhatsappEnquiryRouter);
 app.use('/api/admin/accounts', adminAccountRouter);
 app.use('/api/admin/categories', adminCategoryRouter);
 app.use('/api/admin/bills', adminBillRouter);
+app.use('/api/admin/expenses', adminExpenseRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
