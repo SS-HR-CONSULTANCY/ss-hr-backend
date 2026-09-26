@@ -33,14 +33,14 @@ export class AdminBillController {
   async updateBill(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { enquiryId } = req.params;
-      const { enquiryType, invoiceAmount, currency, status, comment } = req.body;
+      const { enquiryType, invoiceAmount, currency, status, comment, dueDate } = req.body;
       
       if (!enquiryType) {
         res.status(400).json({ success: false, message: "enquiryType is required" });
         return;
       }
 
-      const result = await this.updateBillUseCase.execute(enquiryId, enquiryType, { invoiceAmount, currency, status, comment });
+      const result = await this.updateBillUseCase.execute(enquiryId, enquiryType, { invoiceAmount, currency, status, comment, dueDate });
       res.status(200).json(result);
     } catch (error) {
       HandleError.handle(error, res);

@@ -78,6 +78,7 @@ export class BillRepositoryImpl {
         balanceAmount: bill?.balanceAmount || 0,
         status: bill?.status || "pending",
         comment: bill?.comment || "",
+        dueDate: bill?.dueDate || null,
       };
     });
 
@@ -98,6 +99,7 @@ export class BillRepositoryImpl {
       currency?: "AED" | "INR";
       status?: "pending" | "partially_paid" | "paid";
       comment?: string;
+      dueDate?: Date;
     }
   ) {
     let bill = await BillModel.findOne({ enquiryId });
@@ -118,6 +120,7 @@ export class BillRepositoryImpl {
       if (data.currency) bill.currency = data.currency;
       if (data.status) bill.status = data.status;
       if (data.comment !== undefined) bill.comment = data.comment;
+      if (data.dueDate !== undefined) bill.dueDate = data.dueDate;
       
       await bill.save();
     }

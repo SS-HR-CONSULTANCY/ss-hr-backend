@@ -16,6 +16,7 @@ import {
 import { Types } from "mongoose";
 import { HandleError } from "../../infrastructure/error/error";
 import { EnquiryStatusType } from "../../domain/entities/enquiry";
+import { BillModel } from "../../infrastructure/database/bill/billModel";
 
 export class AdminWhatsappEnquiryController {
   constructor(
@@ -77,6 +78,16 @@ export class AdminWhatsappEnquiryController {
         enquiryId,
         status: validatedData.status as EnquiryStatusType,
       });
+
+      // Auto-generate invoice when status reaches processing_application or beyond
+      const BILLING_STATUSES = ["processing_application", "completed"];
+      if (BILLING_STATUSES.includes(validatedData.status)) {
+        const existing = await BillModel.findOne({ enquiryId });
+        if (!existing) {
+          const bill = new BillModel({ enquiryId, enquiryType: "WhatsApp" });
+          await bill.save(); // pre-save hook generates INV-XXX
+        }
+      }
 
       res.status(200).json(result);
     } catch (error) {

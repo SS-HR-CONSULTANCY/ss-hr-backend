@@ -11,6 +11,7 @@ export interface IBill extends Document {
   balanceAmount: number;
   status: "pending" | "partially_paid" | "paid";
   comment: string;
+  dueDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +62,9 @@ const BillSchema = new Schema<IBill>(
     comment: {
       type: String,
       default: "",
+    },
+    dueDate: {
+      type: Date,
     },
   },
   { timestamps: true }
