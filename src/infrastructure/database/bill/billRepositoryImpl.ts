@@ -10,14 +10,14 @@ export class BillRepositoryImpl {
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
     
-    // We want to fetch all enquiries (both Website and WhatsApp) with status='completed'
-    // and sort them by some criteria (e.g., date). We can aggregate them.
+    // Fetch all enquiries (both Website and WhatsApp) with status 'processing_application' or 'completed'
+    // and sort them by date descending.
 
     // Get Website Enquiries
-    const webEnquiries = await EnquiryModel.find({ status: "completed" }).lean();
+    const webEnquiries = await EnquiryModel.find({ status: { $in: ["processing_application", "completed"] } }).lean();
     
     // Get WhatsApp Enquiries
-    const waEnquiries = await WhatsappEnquiryModel.find({ status: "completed" }).lean();
+    const waEnquiries = await WhatsappEnquiryModel.find({ status: { $in: ["processing_application", "completed"] } }).lean();
 
     // Map them into a standard format
     const formattedWeb = webEnquiries.map((w: any) => ({
