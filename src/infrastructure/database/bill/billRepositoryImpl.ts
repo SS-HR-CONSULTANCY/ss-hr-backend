@@ -164,4 +164,57 @@ export class BillRepositoryImpl {
     await bill.save();
     return bill;
   }
+
+  async updatePayment(enquiryId: string, enquiryType: string, paymentId: string, payment: { date?: Date, amount?: number }) {
+    let bill = await BillModel.findOne({ enquiryId });
+    if (!bill) throw new Error("Bill not found");
+
+    const item = bill.paymentHistory.find((p: any, idx: number) => 
+      p._id?.toString() === paymentId || p.id === paymentId || paymentId === idx.toString()
+    );
+
+    if (item) {
+      if (payment.date) item.date = payment.date;
+      if (payment.amount !== undefined) item.amount = payment.amount;
+    }
+
+    const totalPaid = bill.paymentHistory.reduce((sum, p) => sum + p.amount, 0);
+    bill.balanceAmount = Math.max(0, bill.invoiceAmount - totalPaid);
+
+    if (bill.balanceAmount === 0 && bill.invoiceAmount > 0) {
+      bill.status = "paid";
+    } else if (totalPaid > 0) {
+      bill.status = "partially_paid";
+    } else {
+      bill.status = "pending";
+    }
+
+    await bill.save();
+    return bill;
+  }
+
+  async deletePayment(enquiryId: string, enquiryType: string, paymentId: string) {
+    let bill = await BillModel.findOne({ enquiryId });
+    if (!bill) throw new Error("Bill not found");
+
+    bill.paymentHistory = bill.paymentHistory.filter((p: any, idx: number) => {
+      if (p._id?.toString() === paymentId || p.id === paymentId) return false;
+      if (paymentId === idx.toString()) return false;
+      return true;
+    });
+
+    const totalPaid = bill.paymentHistory.reduce((sum, p) => sum + p.amount, 0);
+    bill.balanceAmount = Math.max(0, bill.invoiceAmount - totalPaid);
+
+    if (bill.balanceAmount === 0 && bill.invoiceAmount > 0) {
+      bill.status = "paid";
+    } else if (totalPaid > 0) {
+      bill.status = "partially_paid";
+    } else {
+      bill.status = "pending";
+    }
+
+    await bill.save();
+    return bill;
+  }
 }

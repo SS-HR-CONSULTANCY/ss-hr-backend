@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { ExpenseModel } from "../../infrastructure/database/expense/expenseModel";
 import { ExpenseCategoryModel } from "../../infrastructure/database/expenseCategory/expenseCategoryModel";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { logAdminAction } from "../../infrastructure/database/adminLog/adminLogRepository";
 
 export const adminExpenseRouter = Router();
 
@@ -101,6 +102,15 @@ adminExpenseRouter.post("/", async (req: Request, res: Response, next: NextFunct
 
     await expense.save();
 
+    logAdminAction({
+      action: "CREATE",
+      module: "Expense",
+      description: `Expense "${title}" created with amount ${amount}`,
+      entityId: expense._id?.toString(),
+      entityName: title,
+      changes: { title, category, currency, amount: Number(amount) },
+    });
+
     res.status(201).json({
       success: true,
       message: "Expense created successfully",
@@ -136,6 +146,15 @@ adminExpenseRouter.patch("/:id", async (req: Request, res: Response, next: NextF
     });
 
     await expense.save();
+
+    logAdminAction({
+      action: "UPDATE",
+      module: "Expense",
+      description: `Expense "${expense.title}" updated`,
+      entityId: id,
+      entityName: expense.title,
+      changes: req.body,
+    });
 
     res.status(200).json({
       success: true,
@@ -173,9 +192,114 @@ adminExpenseRouter.post("/:id/payments", async (req: Request, res: Response, nex
 
     await expense.save();
 
+    logAdminAction({
+      action: "CREATE",
+      module: "ExpensePayment",
+      description: `Payment of ${amount} added to expense "${expense.title}"`,
+      entityId: id,
+      entityName: expense.title,
+      changes: { date, amount: Number(amount), paymentMethod },
+    });
+
     res.status(200).json({
       success: true,
       message: "Payment recorded successfully",
+      data: expense,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update payment in expense
+adminExpenseRouter.patch("/:id/payments/:paymentId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id, paymentId } = req.params;
+    const { date, amount, paymentMethod, note } = req.body;
+
+    const expense = await ExpenseModel.findById(id);
+    if (!expense) {
+      res.status(404).json({ success: false, message: "Expense not found" });
+      return;
+    }
+
+    const item = expense.paymentHistory.find(
+      (p: any, idx: number) => p._id?.toString() === paymentId || (p as any).id === paymentId || paymentId === idx.toString()
+    );
+
+    if (!item) {
+      res.status(404).json({ success: false, message: "Payment entry not found" });
+      return;
+    }
+
+    // Snapshot old values before mutating
+    const oldDate          = item.date;
+    const oldAmount        = item.amount;
+    const oldPaymentMethod = (item as any).paymentMethod;
+    const oldNote          = (item as any).note;
+
+    if (date) item.date = new Date(date);
+    if (amount !== undefined) item.amount = Number(amount);
+    if (paymentMethod !== undefined) (item as any).paymentMethod = paymentMethod;
+    if (note !== undefined) (item as any).note = note;
+
+    await expense.save();
+
+    // Only log what actually changed
+    const changes: Record<string, any> = {};
+    if (date && new Date(date).getTime() !== new Date(oldDate).getTime()) changes.date = new Date(date);
+    if (amount !== undefined && Number(amount) !== oldAmount) { changes.amount = Number(amount); changes.currency = expense.currency; }
+    if (paymentMethod !== undefined && paymentMethod !== oldPaymentMethod) changes.paymentMethod = paymentMethod;
+    if (note !== undefined && note !== oldNote) changes.note = note;
+
+    logAdminAction({
+      action: "UPDATE",
+      module: "ExpensePayment",
+      description: `Payment updated for expense "${expense.title}"`,
+      entityId: paymentId,
+      entityName: expense.title,
+      changes,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Payment updated successfully",
+      data: expense,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+// Delete payment from expense
+adminExpenseRouter.delete("/:id/payments/:paymentId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id, paymentId } = req.params;
+
+    const expense = await ExpenseModel.findById(id);
+    if (!expense) {
+      res.status(404).json({ success: false, message: "Expense not found" });
+      return;
+    }
+
+    expense.paymentHistory = expense.paymentHistory.filter(
+      (p: any, idx: number) => p._id?.toString() !== paymentId && (p as any).id !== paymentId && paymentId !== idx.toString()
+    ) as any;
+
+    await expense.save();
+
+    logAdminAction({
+      action: "DELETE",
+      module: "ExpensePayment",
+      description: `Payment ${paymentId} deleted from expense "${expense.title}"`,
+      entityId: paymentId,
+      entityName: expense.title,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Payment deleted successfully",
       data: expense,
     });
   } catch (error) {
@@ -193,6 +317,14 @@ adminExpenseRouter.delete("/:id", async (req: Request, res: Response, next: Next
       res.status(404).json({ success: false, message: "Expense not found" });
       return;
     }
+
+    logAdminAction({
+      action: "DELETE",
+      module: "Expense",
+      description: `Expense "${expense.title}" deleted`,
+      entityId: id,
+      entityName: expense.title,
+    });
 
     res.status(200).json({
       success: true,
