@@ -134,7 +134,7 @@ export class AdminBillController {
       let oldDate: Date | undefined;
       let oldAmount: number | undefined;
       try {
-        const { BillModel } = await import("../../infrastructure/database/bill/billModel");
+        const { BillModel } = await import("../../infrastructure/database/bill/billModel.js");
         const existingBill: any = await BillModel.findOne({ enquiryId }).lean();
         if (existingBill) {
           const oldItem = existingBill.paymentHistory?.find((p: any, idx: number) =>
