@@ -28,6 +28,7 @@ import adminCategoryRouter from './presentation/routes/adminCategoryRouter';
 import { adminBillRouter } from './presentation/routes/adminBillRouter';
 import { adminExpenseRouter } from './presentation/routes/adminExpenseRouter';
 import { adminLogRouter } from './presentation/routes/adminLogRouter';
+import importedCustomerRouter from './presentation/routes/importedCustomerRouter';
 
 const app = express();
 
@@ -100,6 +101,7 @@ app.use('/api/admin/categories', adminCategoryRouter);
 app.use('/api/admin/bills', adminBillRouter);
 app.use('/api/admin/expenses', adminExpenseRouter);
 app.use('/api/admin/logs', adminLogRouter);
+app.use('/api/imported-customers', importedCustomerRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -109,6 +111,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 // test
+// touching file to restart server
 app.use(
   (err: HttpError, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error(`${err.message} - ${req.method} ${req.originalUrl} - ${err.stack}`);
