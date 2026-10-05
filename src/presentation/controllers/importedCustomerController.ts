@@ -84,7 +84,7 @@ export const importedCustomerController = {
       const skip = (page - 1) * limit;
 
       const customers = await ImportedCustomerModel.find(query)
-        .sort({ createdAt: 1 })
+        .sort({ createdAt: 1, _id: 1 })
         .skip(skip)
         .limit(limit);
 
