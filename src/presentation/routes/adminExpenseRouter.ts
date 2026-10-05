@@ -103,6 +103,7 @@ adminExpenseRouter.post("/", async (req: Request, res: Response, next: NextFunct
     await expense.save();
 
     logAdminAction({
+      performedBy: req.user?.email || "Admin",
       action: "CREATE",
       module: "Expense",
       description: `Expense "${title}" created with amount ${amount}`,
@@ -148,6 +149,7 @@ adminExpenseRouter.patch("/:id", async (req: Request, res: Response, next: NextF
     await expense.save();
 
     logAdminAction({
+      performedBy: req.user?.email || "Admin",
       action: "UPDATE",
       module: "Expense",
       description: `Expense "${expense.title}" updated`,
@@ -193,6 +195,7 @@ adminExpenseRouter.post("/:id/payments", async (req: Request, res: Response, nex
     await expense.save();
 
     logAdminAction({
+      performedBy: req.user?.email || "Admin",
       action: "CREATE",
       module: "ExpensePayment",
       description: `Payment of ${amount} added to expense "${expense.title}"`,
@@ -253,6 +256,7 @@ adminExpenseRouter.patch("/:id/payments/:paymentId", async (req: Request, res: R
     if (note !== undefined && note !== oldNote) changes.note = note;
 
     logAdminAction({
+      performedBy: req.user?.email || "Admin",
       action: "UPDATE",
       module: "ExpensePayment",
       description: `Payment updated for expense "${expense.title}"`,
@@ -290,6 +294,7 @@ adminExpenseRouter.delete("/:id/payments/:paymentId", async (req: Request, res: 
     await expense.save();
 
     logAdminAction({
+      performedBy: req.user?.email || "Admin",
       action: "DELETE",
       module: "ExpensePayment",
       description: `Payment ${paymentId} deleted from expense "${expense.title}"`,
@@ -319,6 +324,7 @@ adminExpenseRouter.delete("/:id", async (req: Request, res: Response, next: Next
     }
 
     logAdminAction({
+      performedBy: req.user?.email || "Admin",
       action: "DELETE",
       module: "Expense",
       description: `Expense "${expense.title}" deleted`,

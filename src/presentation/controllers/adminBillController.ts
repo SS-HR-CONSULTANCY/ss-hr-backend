@@ -76,6 +76,7 @@ export class AdminBillController {
       const invoiceNumber = result?.data?.invoiceNumber || "";
 
       logAdminAction({
+        performedBy: req.user?.email || "Admin",
         action: "UPDATE",
         module: "Bill",
         description: `Bill ${invoiceNumber} updated for ${clientName}`,
@@ -106,6 +107,7 @@ export class AdminBillController {
       const invoiceNumber = result?.data?.invoiceNumber || "";
 
       logAdminAction({
+        performedBy: req.user?.email || "Admin",
         action: "CREATE",
         module: "BillPayment",
         description: `Payment of ${amount} recorded for invoice ${invoiceNumber} (${clientName})`,
@@ -173,6 +175,7 @@ export class AdminBillController {
       const invoiceNumber = result?.data?.invoiceNumber || "";
 
       logAdminAction({
+        performedBy: req.user?.email || "Admin",
         action: "UPDATE",
         module: "BillPayment",
         description: `Payment updated for invoice ${invoiceNumber} (${clientName})`,
@@ -204,6 +207,7 @@ export class AdminBillController {
       const invoiceNumber = result?.data?.invoiceNumber || "";
 
       logAdminAction({
+        performedBy: req.user?.email || "Admin",
         action: "DELETE",
         module: "BillPayment",
         description: `Payment removed from invoice ${invoiceNumber} (${clientName})`,

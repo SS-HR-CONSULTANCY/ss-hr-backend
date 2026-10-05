@@ -5,6 +5,7 @@ import { REGEX_PROFESSIONAL_STATUS, REGEX_PLACE, REGEX_COUNTRY, REGEX_FEATURE, R
 export enum Role {
   User = "user",
   Admin = "admin",
+  Staff = "staff",
 }
 
 export const roleSchema = z.nativeEnum(Role);

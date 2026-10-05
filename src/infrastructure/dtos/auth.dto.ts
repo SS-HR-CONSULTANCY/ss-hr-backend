@@ -35,7 +35,8 @@ export interface ResendOtpRequest {
 
 // Login
 export interface LoginRequest {
-  email: string;
+  email?: string;
+  username?: string;
   password: string;
   role: string;
 }
@@ -55,6 +56,7 @@ export interface LoginResponse extends CommonResponse {
     portfolioUrl?: string;
     resume?: string;
     professionalStatus?: string;
+    permissions?: string[];
   },
   token: string;
   address?: Address | null;
@@ -64,8 +66,9 @@ export interface LoginResponse extends CommonResponse {
 
 // Check Auth
 export interface CheckUserStatusRequest {
-  id: Types.ObjectId;
+  id?: Types.ObjectId;
   role: string;
+  email?: string;
 }
 export interface CheckUserStatusResponse extends CommonResponse {
   status: number;
@@ -84,6 +87,7 @@ export interface CheckUserStatusResponse extends CommonResponse {
     portfolioUrl?: string;
     resume?: string;
     professionalStatus?: string;
+    permissions?: string[];
   };
 }
 

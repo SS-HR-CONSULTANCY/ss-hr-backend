@@ -123,10 +123,11 @@ export class AuthController {
   async login(req: Request, res: Response) {
     try {
       const validateData = loginZodSchema.parse(req.body);
-      const { email, password, role } = validateData;
-      if (!email || !password || !role) throw new Error("Invalid request.");
+      const { email, username, password, role } = validateData;
+      if ((!email && !username) || !password || !role) throw new Error("Invalid request.");
       const { success, message, user, token, address, careerData } = await this.loginUseCase.execute({
         email,
+        username,
         password,
         role,
       });
@@ -174,9 +175,11 @@ export class AuthController {
     try {
       const user = (req.user as DecodedUser);
       if (!user) throw new Error("User not found");
+      console.log("Decoded user in checkUserStatus:", user);
       const result = await this.checkUserStatusUseCase.execute({
-        id: new Types.ObjectId(user.userId),
+        id: user.userId ? new Types.ObjectId(user.userId) : undefined,
         role: user.role,
+        email: user.email,
       });
       res.status(result.status).json(result);
     } catch (error) {

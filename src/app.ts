@@ -29,6 +29,7 @@ import { adminBillRouter } from './presentation/routes/adminBillRouter';
 import { adminExpenseRouter } from './presentation/routes/adminExpenseRouter';
 import { adminLogRouter } from './presentation/routes/adminLogRouter';
 import importedCustomerRouter from './presentation/routes/importedCustomerRouter';
+import systemUserRouter from './presentation/routes/systemUserRouter';
 
 const app = express();
 
@@ -101,6 +102,7 @@ app.use('/api/admin/categories', adminCategoryRouter);
 app.use('/api/admin/bills', adminBillRouter);
 app.use('/api/admin/expenses', adminExpenseRouter);
 app.use('/api/admin/logs', adminLogRouter);
+app.use('/api/admin/system-users', systemUserRouter);
 app.use('/api/imported-customers', importedCustomerRouter);
 
 app.get('/api/health', (req, res) => {

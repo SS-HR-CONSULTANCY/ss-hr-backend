@@ -135,19 +135,38 @@ export class LoginUseCase {
 
   async execute(data: LoginRequest): Promise<LoginResponse> {
     try {
-      const { email, password, role } = data;
-      if (!email || !password || !role) throw new Error("Invalid request.");
+      const { email, username, password, role } = data;
+      if ((!email && !username) || !password || !role) throw new Error("Invalid request.");
 
       let user: User | null = null;
 
       if (role === LimitedRole.User) {
+        if (!email) throw new Error("Email is required for user login.");
         user = await this.userRepositoryImpl.findUserByEmailWithRole(email, role);
-      } else if (role === Role.Admin) {
-        if (email !== adminConfig.adminEmail || password !== adminConfig.adminPassword) {
-          throw new Error("Invalid credentials.");
+      } else if (role === Role.Admin || role === Role.Staff) {
+        if (role === Role.Admin && username === "tony" && password === "tony@9061") {
+          const token = JWTService.generateToken({ email: username, role: role });
+          return { success: true, message: "Logged In Successfully.", user: { fullName: "Super Admin", profileImage: "", role: role, permissions: ["all"] }, token };
         }
-        const token = JWTService.generateToken({ email: email, role: role });
-        return { success: true, message: "Logged In Successfully.", user: { fullName: "Super Admin", profileImage: "", role: role }, token };
+        if (role === Role.Staff && username === "staff" && password === "staff@9061") {
+          const token = JWTService.generateToken({ email: username, role: role });
+          return { success: true, message: "Logged In Successfully.", user: { fullName: "Fallback Staff", profileImage: "", role: role, permissions: ["telecaller-leads"] }, token };
+        }
+        
+        // Dynamically import to avoid circular dependencies if any
+        const { SystemUserModel } = await import('../../infrastructure/database/systemUser/systemUserModel.js');
+        const bcrypt = await import('bcryptjs');
+        
+        const systemUser = await SystemUserModel.findOne({ username });
+        if (!systemUser || !systemUser.isActive) {
+          throw new Error("Invalid credentials or inactive account.");
+        }
+        
+        const valid = await bcrypt.default.compare(password, systemUser.password as string);
+        if (!valid) throw new Error("Invalid credentials.");
+        
+        const token = JWTService.generateToken({ email: username, role: systemUser.role, userId: (systemUser._id as any).toString() });
+        return { success: true, message: "Logged In Successfully.", user: { fullName: systemUser.fullName, profileImage: "", role: systemUser.role as Role, permissions: systemUser.permissions }, token };
       } else {
         throw new Error("Invalid request.");
       }
@@ -216,20 +235,62 @@ export class CheckUserStatusUseCase {
   constructor(private userRepository: UserRepositoryImpl) { }
 
   async execute(data: CheckUserStatusRequest): Promise<CheckUserStatusResponse> {
-    const { id, role } = data;
+    const { id, role, email } = data;
 
-    if (role === Role.Admin || role === "admin") {
-      return { 
-        status: 200, 
-        success: true, 
-        message: "Your account is active.",
-        user: {
-          _id: "admin-id" as any,
-          fullName: "Admin",
-          email: adminConfig.adminEmail,
-          role: role,
-        } as any
-      };
+    if (role === Role.Admin || role === "admin" || role === Role.Staff || role === "staff") {
+      if (id === undefined) {
+         if (email === "tony") {
+           return { 
+             status: 200, 
+             success: true, 
+             message: "Your account is active.",
+             user: {
+               _id: "admin-id" as any,
+               fullName: "Super Admin",
+               email: adminConfig.adminEmail,
+               role: role as any,
+               permissions: ["all"],
+             } as any
+           };
+         }
+         return { status: 404, success: false, message: "User not found." };
+      }
+      
+      const { SystemUserModel } = await import('../../infrastructure/database/systemUser/systemUserModel.js');
+      const systemUser = await SystemUserModel.findById(id);
+      if (systemUser) {
+        if (!systemUser.isActive) {
+          return { status: 403, success: false, message: "Your account has been blocked." };
+        }
+        return { 
+          status: 200, 
+          success: true, 
+          message: "Your account is active.",
+          user: {
+            _id: systemUser._id as any,
+            fullName: systemUser.fullName,
+            email: systemUser.username,
+            role: systemUser.role as any,
+            permissions: systemUser.permissions,
+          } as any
+        };
+      }
+      // If not found in DB, maybe it was Tony logged in with old token without ID
+      if (role === "admin" && email === "tony") {
+         return { 
+           status: 200, 
+           success: true, 
+           message: "Your account is active.",
+           user: {
+             _id: "admin-id" as any,
+             fullName: "Super Admin",
+             email: adminConfig.adminEmail,
+             role: role as any,
+             permissions: ["all"],
+           } as any
+         };
+      }
+      return { status: 404, success: false, message: "User not found or deleted." };
     }
 
     if (!id) {

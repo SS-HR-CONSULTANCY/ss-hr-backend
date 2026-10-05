@@ -24,7 +24,12 @@ export const resendOTPZodSchema = z.object({
 });
 
 // login controller zod validation
-export const loginZodSchema = z.object({ email, password, role: roleSchema });
+export const loginZodSchema = z.object({ 
+  email: z.union([email, z.literal("")]).optional(), 
+  username: z.union([z.string(), z.literal("")]).optional(), 
+  password, 
+  role: roleSchema 
+});
 
 // verify email controller zod validation
 export const verifyEmailZodSchema = z.object({ email });

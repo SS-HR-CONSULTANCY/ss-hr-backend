@@ -7,7 +7,11 @@ export interface IImportedCustomer extends Document {
   state: string;
   designations: string[];
   cvUrl: string;
+  linkedinUrl?: string;
   source: string;
+  status: string;
+  comment: string;
+  scheduledDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +24,15 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
     state: { type: String, trim: true },
     designations: { type: [String], default: [] },
     cvUrl: { type: String, trim: true },
+    linkedinUrl: { type: String, trim: true },
     source: { type: String, default: 'ShareMyApps' },
+    status: { 
+      type: String, 
+      enum: ['Pending', 'Contacted', 'Interested', 'Converted', 'Not Interested'], 
+      default: 'Pending' 
+    },
+    comment: { type: String, trim: true, default: '' },
+    scheduledDate: { type: Date },
   },
   { timestamps: true }
 );
