@@ -55,6 +55,20 @@ export const importedCustomerController = {
 
   getCustomers: async (req: Request, res: Response) => {
     try {
+      // Auto-forward past pending scheduled dates to today
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+
+      await ImportedCustomerModel.updateMany(
+        {
+          status: 'Pending',
+          scheduledDate: { $lt: today, $ne: null }
+        },
+        {
+          $set: { scheduledDate: today }
+        }
+      );
+
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const search = req.query.search as string || "";
@@ -64,7 +78,9 @@ export const importedCustomerController = {
       };
       
       const scheduledDate = req.query.scheduledDate as string;
-      if (scheduledDate) {
+      if (scheduledDate === 'any') {
+        query.scheduledDate = { $exists: true, $ne: null };
+      } else if (scheduledDate) {
         // e.g., '2026-10-04'
         const start = new Date(scheduledDate);
         start.setUTCHours(0, 0, 0, 0);
@@ -90,13 +106,23 @@ export const importedCustomerController = {
 
       const total = await ImportedCustomerModel.countDocuments(query);
 
+      const pendingCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Pending' });
+      const contactedCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Contacted' });
+      const needFollowUpCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Need Follow Up' });
+
       res.status(200).json({
         success: true,
         data: {
           customers,
           total,
           page,
-          totalPages: Math.ceil(total / limit)
+          totalPages: Math.ceil(total / limit),
+          stats: {
+            total,
+            pending: pendingCount,
+            contacted: contactedCount,
+            needFollowUp: needFollowUpCount
+          }
         }
       });
     } catch (error: any) {

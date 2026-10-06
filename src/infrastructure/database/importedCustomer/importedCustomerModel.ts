@@ -28,7 +28,7 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
     source: { type: String, default: 'ShareMyApps' },
     status: { 
       type: String, 
-      enum: ['Pending', 'Contacted', 'Interested', 'Converted', 'Not Interested'], 
+      enum: ['Pending', 'Contacted', 'Need Follow Up', 'Not Interested', 'Processing Application', 'Completed', 'Rejected Application'], 
       default: 'Pending' 
     },
     comment: { type: String, trim: true, default: '' },
