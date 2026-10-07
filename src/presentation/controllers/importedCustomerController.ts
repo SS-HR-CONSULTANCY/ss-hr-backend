@@ -99,8 +99,15 @@ export const importedCustomerController = {
 
       const skip = (page - 1) * limit;
 
+      const sortBy = req.query.sortBy as string;
+      const sortOrder = req.query.sortOrder as string;
+      let sortQuery: any = { createdAt: 1, _id: 1 };
+      if (sortBy) {
+        sortQuery = { [sortBy]: sortOrder === 'desc' ? -1 : 1, _id: 1 };
+      }
+
       const customers = await ImportedCustomerModel.find(query)
-        .sort({ createdAt: 1, _id: 1 })
+        .sort(sortQuery)
         .skip(skip)
         .limit(limit);
 
