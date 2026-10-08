@@ -106,11 +106,21 @@ export const importedCustomerController = {
         sortQuery = { [sortBy]: sortOrder === 'desc' ? -1 : 1, _id: 1 };
       }
 
-      const customers = await ImportedCustomerModel.find(query)
+      // Optional status filter (applies to table rows only, not to stats)
+      const status = req.query.status as string;
+      const listQuery: any = { ...query };
+      if (status && status !== 'all') {
+        listQuery.status = status === 'Pending'
+          ? { $in: ['Pending', null, ''] }
+          : status;
+      }
+
+      const customers = await ImportedCustomerModel.find(listQuery)
         .sort(sortQuery)
         .skip(skip)
         .limit(limit);
 
+      const filteredTotal = await ImportedCustomerModel.countDocuments(listQuery);
       const total = await ImportedCustomerModel.countDocuments(query);
 
       const pendingCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Pending' });
@@ -121,9 +131,9 @@ export const importedCustomerController = {
         success: true,
         data: {
           customers,
-          total,
+          total: filteredTotal,
           page,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(filteredTotal / limit),
           stats: {
             total,
             pending: pendingCount,
