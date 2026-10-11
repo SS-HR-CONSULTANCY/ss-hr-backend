@@ -71,11 +71,9 @@ export const importedCustomerController = {
 
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const search = req.query.search as string || "";
+      const search = (req.query.search as string || "").trim();
 
-      const query: any = {
-        phone: { $exists: true, $nin: ["", null] }
-      };
+      const query: any = {};
       
       const scheduledDate = req.query.scheduledDate as string;
       if (scheduledDate === 'any') {
@@ -90,11 +88,25 @@ export const importedCustomerController = {
       }
 
       if (search) {
-        query.$or = [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-          { phone: { $regex: search, $options: "i" } }
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const orConditions: any[] = [
+          { name: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
+          { phone: { $regex: escapedSearch, $options: "i" } },
+          { state: { $regex: escapedSearch, $options: "i" } },
+          { designations: { $regex: escapedSearch, $options: "i" } }
         ];
+
+        const cleanDigits = search.replace(/[\s-]/g, '');
+        if (/^\+?\d{3,}$/.test(cleanDigits)) {
+          const phonePattern = cleanDigits.split('').map(c => c === '+' ? '\\+' : c).join('[\\s-]*');
+          orConditions.push({ phone: { $regex: phonePattern, $options: "i" } });
+        }
+
+        query.$or = orConditions;
+      } else {
+        // When not searching, filter for leads with phone numbers by default
+        query.phone = { $exists: true, $nin: ["", null] };
       }
 
       const skip = (page - 1) * limit;
