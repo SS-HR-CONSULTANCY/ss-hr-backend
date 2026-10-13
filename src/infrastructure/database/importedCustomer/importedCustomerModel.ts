@@ -12,9 +12,29 @@ export interface IImportedCustomer extends Document {
   status: string;
   comment: string;
   scheduledDate?: Date;
+  activityLog: IImportedCustomerActivity[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type ImportedCustomerActivityType = 'status' | 'comment' | 'schedule' | 'state';
+
+export interface IImportedCustomerActivity {
+  type: ImportedCustomerActivityType;
+  from?: string;
+  to?: string;
+  at: Date;
+}
+
+const ActivitySchema = new Schema<IImportedCustomerActivity>(
+  {
+    type: { type: String, enum: ['status', 'comment', 'schedule', 'state'], required: true },
+    from: { type: String, default: '' },
+    to: { type: String, default: '' },
+    at: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
 
 const ImportedCustomerSchema = new Schema<IImportedCustomer>(
   {
@@ -33,6 +53,7 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
     },
     comment: { type: String, trim: true, default: '' },
     scheduledDate: { type: Date },
+    activityLog: { type: [ActivitySchema], default: [] },
   },
   { timestamps: true }
 );

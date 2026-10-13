@@ -1,6 +1,14 @@
+import dns from "dns";
 import mongoose from "mongoose";
 import { mongoConfig } from "../env";
 import logger from "../../infrastructure/logger/logger";
+
+// Set reliable public DNS servers for Node SRV resolution (fixes ESERVFAIL on Windows/ISP IPv6 DNS)
+try {
+  dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
+} catch {
+  // Ignore if custom DNS cannot be configured in current environment
+}
 
 export class DatabaseConnection {
   private static instance: DatabaseConnection;

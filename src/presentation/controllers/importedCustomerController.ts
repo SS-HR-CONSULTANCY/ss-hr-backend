@@ -120,11 +120,16 @@ export const importedCustomerController = {
 
       // Optional status filter (applies to table rows only, not to stats)
       const status = req.query.status as string;
+      const state = req.query.state as string;
       const listQuery: any = { ...query };
       if (status && status !== 'all') {
         listQuery.status = status === 'Pending'
           ? { $in: ['Pending', null, ''] }
           : status;
+      }
+      if (state && state !== 'all') {
+        const escapedState = state.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        listQuery.state = { $regex: `^${escapedState}$`, $options: 'i' };
       }
 
       const customers = await ImportedCustomerModel.find(listQuery)
@@ -139,6 +144,23 @@ export const importedCustomerController = {
       const contactedCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Contacted' });
       const needFollowUpCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Need Follow Up' });
 
+      const rawStates = await ImportedCustomerModel.distinct('state', { state: { $exists: true, $nin: ['', null] } });
+      const getStatePriority = (name: string): number => {
+        const clean = name.trim().toLowerCase().replace(/\s+/g, '');
+        if (clean === 'kerala') return 0;
+        if (clean === 'tamilnadu') return 1;
+        if (clean === 'karnataka') return 2;
+        return 999;
+      };
+      const states = (rawStates as string[])
+        .filter(Boolean)
+        .sort((a, b) => {
+          const pA = getStatePriority(a);
+          const pB = getStatePriority(b);
+          if (pA !== pB) return pA - pB;
+          return a.localeCompare(b);
+        });
+
       res.status(200).json({
         success: true,
         data: {
@@ -146,6 +168,7 @@ export const importedCustomerController = {
           total: filteredTotal,
           page,
           totalPages: Math.ceil(filteredTotal / limit),
+          states,
           stats: {
             total,
             pending: pendingCount,
@@ -177,6 +200,38 @@ export const importedCustomerController = {
         } else {
            updateData.scheduledDate = scheduledDate;
         }
+      }
+
+      const existing = await ImportedCustomerModel.findById(id);
+      if (!existing) {
+        res.status(404).json({ success: false, message: "Customer not found" });
+        return;
+      }
+
+      const now = new Date();
+      const activities: any[] = [];
+      const toDay = (d?: Date | string | null) =>
+        d ? new Date(d).toISOString().split("T")[0] : "";
+
+      if (status !== undefined && status !== existing.status) {
+        activities.push({ type: "status", from: existing.status || "Pending", to: status, at: now });
+      }
+      if (comment !== undefined && (comment || "").trim() !== (existing.comment || "").trim()) {
+        activities.push({ type: "comment", from: existing.comment || "", to: (comment || "").trim(), at: now });
+      }
+      if (state !== undefined && (state || "").trim() !== (existing.state || "").trim()) {
+        activities.push({ type: "state", from: existing.state || "", to: (state || "").trim(), at: now });
+      }
+      if (scheduledDate !== undefined) {
+        const newDay = scheduledDate === null || scheduledDate === "" ? "" : toDay(scheduledDate);
+        const oldDay = toDay(existing.scheduledDate);
+        if (newDay !== oldDay) {
+          activities.push({ type: "schedule", from: oldDay, to: newDay, at: now });
+        }
+      }
+
+      if (activities.length > 0) {
+        updateOp.$push = { activityLog: { $each: activities } };
       }
 
       const customer = await ImportedCustomerModel.findByIdAndUpdate(
