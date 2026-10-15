@@ -96,7 +96,7 @@ export class AdminGetEnquiryAnalyticsUseCase {
 export class AdminGetEnquiryStatusDistributionUseCase {
   constructor(private enquiryRepository: EnquiryRepositoryImpl) {}
 
-  async execute(period: 'weekly' | 'monthly') {
+  async execute(period: 'weekly' | 'monthly' | 'all') {
     try {
       const data = await this.enquiryRepository.getEnquiryStatusDistribution(period);
       return {

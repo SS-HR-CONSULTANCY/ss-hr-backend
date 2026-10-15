@@ -120,7 +120,7 @@ export class AdminEnquiryController {
 
   async getEnquiryStatusDistribution(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const period = (req.query.period as 'weekly' | 'monthly') || 'weekly';
+      const period = (req.query.period as 'weekly' | 'monthly' | 'all') || 'weekly';
 
       const result = await this.getEnquiryStatusDistributionUseCase.execute(period);
       res.status(200).json(result);

@@ -12,6 +12,7 @@ export interface IImportedCustomer extends Document {
   status: string;
   comment: string;
   scheduledDate?: Date;
+  scheduledAt?: Date;
   activityLog: IImportedCustomerActivity[];
   createdAt: Date;
   updatedAt: Date;
@@ -53,6 +54,7 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
     },
     comment: { type: String, trim: true, default: '' },
     scheduledDate: { type: Date },
+    scheduledAt: { type: Date, index: true },
     activityLog: { type: [ActivitySchema], default: [] },
   },
   { timestamps: true }

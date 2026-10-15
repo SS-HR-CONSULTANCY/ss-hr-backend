@@ -12,6 +12,8 @@ export interface IBill extends Document {
   status: "pending" | "partially_paid" | "paid";
   comment: string;
   dueDate?: Date;
+  googleReviewStatus?: "pending" | "reviewed";
+  googleReviewLink?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +67,15 @@ const BillSchema = new Schema<IBill>(
     },
     dueDate: {
       type: Date,
+    },
+    googleReviewStatus: {
+      type: String,
+      enum: ["pending", "reviewed"],
+      default: "pending",
+    },
+    googleReviewLink: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }

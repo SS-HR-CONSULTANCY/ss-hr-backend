@@ -56,14 +56,23 @@ export class AdminBillController {
   async updateBill(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { enquiryId } = req.params;
-      const { enquiryType, invoiceAmount, currency, status, serviceStatus, comment, dueDate } = req.body;
+      const { enquiryType, invoiceAmount, currency, status, serviceStatus, comment, dueDate, googleReviewStatus, googleReviewLink } = req.body;
       
       if (!enquiryType) {
         res.status(400).json({ success: false, message: "enquiryType is required" });
         return;
       }
 
-      const result: any = await this.updateBillUseCase.execute(enquiryId, enquiryType, { invoiceAmount, currency, status, serviceStatus, comment, dueDate });
+      const result: any = await this.updateBillUseCase.execute(enquiryId, enquiryType, {
+        invoiceAmount,
+        currency,
+        status,
+        serviceStatus,
+        comment,
+        dueDate,
+        googleReviewStatus,
+        googleReviewLink
+      });
       
       const changes: Record<string, any> = {};
       if (invoiceAmount !== undefined) changes.invoiceAmount = invoiceAmount;
@@ -71,6 +80,8 @@ export class AdminBillController {
       if (status) changes.status = status;
       if (serviceStatus) changes.serviceStatus = serviceStatus;
       if (dueDate) changes.dueDate = dueDate;
+      if (googleReviewStatus !== undefined) changes.googleReviewStatus = googleReviewStatus;
+      if (googleReviewLink !== undefined) changes.googleReviewLink = googleReviewLink;
 
       const clientName = await resolveClientName(enquiryId, enquiryType);
       const invoiceNumber = result?.data?.invoiceNumber || "";

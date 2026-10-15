@@ -80,6 +80,8 @@ export class BillRepositoryImpl {
         status: bill?.status || "pending",
         comment: bill?.comment || "",
         dueDate: bill?.dueDate || null,
+        googleReviewStatus: bill?.googleReviewStatus || "pending",
+        googleReviewLink: bill?.googleReviewLink || "",
       };
     });
 
@@ -102,6 +104,8 @@ export class BillRepositoryImpl {
       serviceStatus?: "processing_application" | "completed";
       comment?: string;
       dueDate?: Date;
+      googleReviewStatus?: "pending" | "reviewed";
+      googleReviewLink?: string;
     }
   ) {
     if (data.serviceStatus) {
@@ -131,6 +135,8 @@ export class BillRepositoryImpl {
       if (data.status) bill.status = data.status;
       if (data.comment !== undefined) bill.comment = data.comment;
       if (data.dueDate !== undefined) bill.dueDate = data.dueDate;
+      if (data.googleReviewStatus !== undefined) bill.googleReviewStatus = data.googleReviewStatus;
+      if (data.googleReviewLink !== undefined) bill.googleReviewLink = data.googleReviewLink;
       
       await bill.save();
     }

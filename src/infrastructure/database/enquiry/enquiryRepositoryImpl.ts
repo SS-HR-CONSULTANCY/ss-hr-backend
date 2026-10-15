@@ -6,6 +6,25 @@ import { ApiPaginationRequest } from "../../dtos/common.dts";
 import { CreateEnquiryRequest, GetAllEnquiriesResponse } from "../../dtos/enquiry.dto";
 import { WhatsappEnquiryModel } from "../whatsappEnquiry/whatsappEnquiryModel";
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const IST_TIMEZONE = "Asia/Kolkata";
+
+/**
+ * Start of the current period as a UTC instant, computed in IST:
+ * weekly -> Monday 00:00 IST, monthly -> Jan 1 00:00 IST (current year).
+ */
+const getIstPeriodStart = (period: 'weekly' | 'monthly'): Date => {
+  const ist = new Date(Date.now() + IST_OFFSET_MS);
+  const y = ist.getUTCFullYear();
+  const m = ist.getUTCMonth();
+  const d = ist.getUTCDate();
+  if (period === 'weekly') {
+    const daysSinceMonday = (ist.getUTCDay() + 6) % 7;
+    return new Date(Date.UTC(y, m, d - daysSinceMonday) - IST_OFFSET_MS);
+  }
+  return new Date(Date.UTC(y, 0, 1) - IST_OFFSET_MS);
+};
+
 export class EnquiryRepositoryImpl implements IEnquiryRepository {
   private mapToEntity(enquiry: IEnquiry): Enquiry {
     return new Enquiry(
@@ -165,23 +184,15 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
     return Array.from(merged.entries()).map(([status, count]) => ({ status, count }));
   }
 
-  async getEnquiryStatusDistribution(period: 'weekly' | 'monthly'): Promise<Array<{ status: string; count: number }>> {
-    const now = new Date();
+  async getEnquiryStatusDistribution(period: 'weekly' | 'monthly' | 'all'): Promise<Array<{ status: string; count: number }>> {
     const matchStage: any = {};
     const whatsappMatchStage: any = {};
 
-    if (period === 'weekly') {
-      const dayOfWeek = now.getDay(); 
-      const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-      const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
-      monday.setHours(0,0,0,0);
-      matchStage.createdAt = { $gte: monday };
-      whatsappMatchStage.date = { $gte: monday };
-    } else if (period === 'monthly') {
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      firstDayOfMonth.setHours(0,0,0,0);
-      matchStage.createdAt = { $gte: firstDayOfMonth };
-      whatsappMatchStage.date = { $gte: firstDayOfMonth };
+    // 'all' = all-time distribution (no date filter)
+    if (period === 'weekly' || period === 'monthly') {
+      const start = getIstPeriodStart(period);
+      matchStage.createdAt = { $gte: start };
+      whatsappMatchStage.date = { $gte: start };
     }
 
     const pipeline = [
@@ -200,109 +211,62 @@ export class EnquiryRepositoryImpl implements IEnquiryRepository {
       EnquiryModel.aggregate(pipeline),
       WhatsappEnquiryModel.aggregate(whatsappPipeline)
     ]);
-    
+
     const merged = new Map<string, number>();
     for (const item of [...result1, ...result2]) {
       const status = item.status || 'unknown';
       merged.set(status, (merged.get(status) || 0) + item.count);
     }
-    
+
     return Array.from(merged.entries()).map(([status, count]) => ({ status, count }));
   }
 
+  /**
+   * Enquiry counts for charts.
+   * - weekly : per day (YYYY-MM-DD) for the current week (Mon-Sun)
+   * - monthly: per month (YYYY-MM) for the current year
+   * Dates are bucketed in IST so results don't shift by timezone (e.g. early morning).
+   */
   async getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string, category?: string): Promise<Array<{ date: string; count: number }>> {
     const matchStage: any = {};
-    if (status && status !== 'all') {
-      matchStage.status = status;
-    }
-    if (category && category !== 'all') {
-      matchStage.category = category;
-    }
-
-    const now = new Date();
-    let format = "%Y-%m-%d";
-
-    if (period === 'weekly') {
-      // Current week from Monday
-      const dayOfWeek = now.getDay(); 
-      const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-      const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
-      monday.setHours(0,0,0,0);
-      matchStage.createdAt = { $gte: monday };
-    } else if (period === 'monthly') {
-      // Current month
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      firstDayOfMonth.setHours(0,0,0,0);
-      matchStage.createdAt = { $gte: firstDayOfMonth };
-    }
-
-    const pipeline: any[] = [];
-    pipeline.push({ $match: matchStage });
-    pipeline.push(
-      {
-        $group: {
-          _id: { $dateToString: { format, date: "$createdAt" } },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } },
-      {
-        $project: {
-          date: "$_id",
-          count: 1,
-          _id: 0
-        }
-      }
-    );
-
     const whatsappMatchStage: any = {};
     if (status && status !== 'all') {
+      matchStage.status = status;
       whatsappMatchStage.status = status;
     }
     if (category && category !== 'all') {
+      matchStage.category = category;
       whatsappMatchStage.category = category;
     }
-    if (period === 'weekly') {
-      const dayOfWeek = now.getDay(); 
-      const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-      const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
-      monday.setHours(0,0,0,0);
-      whatsappMatchStage.date = { $gte: monday };
-    } else if (period === 'monthly') {
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      firstDayOfMonth.setHours(0,0,0,0);
-      whatsappMatchStage.date = { $gte: firstDayOfMonth };
-    }
 
-    const whatsappPipeline: any[] = [];
-    whatsappPipeline.push({ $match: whatsappMatchStage });
-    whatsappPipeline.push(
+    const start = getIstPeriodStart(period);
+    matchStage.createdAt = { $gte: start };
+    whatsappMatchStage.date = { $gte: start };
+
+    const format = period === 'weekly' ? "%Y-%m-%d" : "%Y-%m";
+
+    const buildPipeline = (match: any, dateField: string): any[] => [
+      { $match: match },
       {
         $group: {
-          _id: { $dateToString: { format, date: "$date" } },
+          _id: { $dateToString: { format, date: `$${dateField}`, timezone: IST_TIMEZONE } },
           count: { $sum: 1 }
         }
       },
       { $sort: { _id: 1 } },
-      {
-        $project: {
-          date: "$_id",
-          count: 1,
-          _id: 0
-        }
-      }
-    );
+      { $project: { date: "$_id", count: 1, _id: 0 } }
+    ];
 
     const [result1, result2] = await Promise.all([
-      EnquiryModel.aggregate(pipeline),
-      WhatsappEnquiryModel.aggregate(whatsappPipeline)
+      EnquiryModel.aggregate(buildPipeline(matchStage, "createdAt")),
+      WhatsappEnquiryModel.aggregate(buildPipeline(whatsappMatchStage, "date"))
     ]);
-    
+
     const merged = new Map<string, number>();
     for (const item of [...result1, ...result2]) {
       merged.set(item.date, (merged.get(item.date) || 0) + item.count);
     }
-    
+
     return Array.from(merged.entries())
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));

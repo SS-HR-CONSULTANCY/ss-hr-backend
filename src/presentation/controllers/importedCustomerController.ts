@@ -227,6 +227,11 @@ export const importedCustomerController = {
         const oldDay = toDay(existing.scheduledDate);
         if (newDay !== oldDay) {
           activities.push({ type: "schedule", from: oldDay, to: newDay, at: now });
+          if (newDay) {
+            updateData.scheduledAt = now;
+          } else {
+            updateOp.$unset = { ...(updateOp.$unset || {}), scheduledAt: 1 };
+          }
         }
       }
 

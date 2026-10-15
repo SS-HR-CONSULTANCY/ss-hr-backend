@@ -15,7 +15,7 @@ export interface IEnquiryRepository {
   deleteEnquiry(enquiryId: Types.ObjectId): Promise<boolean>;
   getTotalCount(): Promise<number>;
   getEnquiryStatusCounts(): Promise<Array<{ status: string; count: number }>>;
-  getEnquiryStatusDistribution(period: 'weekly' | 'monthly'): Promise<Array<{ status: string; count: number }>>;
+  getEnquiryStatusDistribution(period: 'weekly' | 'monthly' | 'all'): Promise<Array<{ status: string; count: number }>>;
   getEnquiryStatsByPeriod(period: 'weekly' | 'monthly', status?: string, category?: string): Promise<Array<{ date: string; count: number }>>;
   getSummaryStats(): Promise<{ total: number; visitingPackage: number; inProgress: number; pending: number; completed: number }>;
   getEnquiriesByAccount(accountName: string): Promise<any[]>;
