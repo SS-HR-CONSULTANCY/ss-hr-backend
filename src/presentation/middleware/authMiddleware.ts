@@ -4,7 +4,8 @@ import { JWTService } from "../../infrastructure/security/jwt";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
 
-  const token = req.cookies["token"];
+  const authHeader = req.headers.authorization;
+  const token = req.cookies["token"] || (authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null);
   const currentTime = Date.now();
 
   if (!token) {

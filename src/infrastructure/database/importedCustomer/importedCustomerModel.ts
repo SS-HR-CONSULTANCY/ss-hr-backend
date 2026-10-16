@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IImportedCustomer extends Document {
   name: string;
@@ -13,12 +13,13 @@ export interface IImportedCustomer extends Document {
   comment: string;
   scheduledDate?: Date;
   scheduledAt?: Date;
+  assignedTo?: Types.ObjectId | any;
   activityLog: IImportedCustomerActivity[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type ImportedCustomerActivityType = 'status' | 'comment' | 'schedule' | 'state';
+export type ImportedCustomerActivityType = 'status' | 'comment' | 'schedule' | 'state' | 'assignment';
 
 export interface IImportedCustomerActivity {
   type: ImportedCustomerActivityType;
@@ -29,7 +30,7 @@ export interface IImportedCustomerActivity {
 
 const ActivitySchema = new Schema<IImportedCustomerActivity>(
   {
-    type: { type: String, enum: ['status', 'comment', 'schedule', 'state'], required: true },
+    type: { type: String, enum: ['status', 'comment', 'schedule', 'state', 'assignment'], required: true },
     from: { type: String, default: '' },
     to: { type: String, default: '' },
     at: { type: Date, default: Date.now },
@@ -55,6 +56,7 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
     comment: { type: String, trim: true, default: '' },
     scheduledDate: { type: Date },
     scheduledAt: { type: Date, index: true },
+    assignedTo: { type: Schema.Types.ObjectId, ref: 'SystemUser', default: null, index: true },
     activityLog: { type: [ActivitySchema], default: [] },
   },
   { timestamps: true }

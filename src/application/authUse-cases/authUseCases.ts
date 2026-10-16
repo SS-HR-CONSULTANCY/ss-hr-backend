@@ -149,8 +149,20 @@ export class LoginUseCase {
           return { success: true, message: "Logged In Successfully.", user: { fullName: "Super Admin", profileImage: "", role: role, permissions: ["all"] }, token };
         }
         if (role === Role.Staff && username === "staff" && password === "staff@9061") {
-          const token = JWTService.generateToken({ email: username, role: role });
-          return { success: true, message: "Logged In Successfully.", user: { fullName: "Fallback Staff", profileImage: "", role: role, permissions: ["telecaller-leads"] }, token };
+          const { SystemUserModel } = await import('../../infrastructure/database/systemUser/systemUserModel.js');
+          let staffUser = await SystemUserModel.findOne({ username: "staff" });
+          if (!staffUser) {
+            staffUser = await SystemUserModel.create({
+              username: "staff",
+              fullName: "Fallback Staff",
+              role: "staff",
+              permissions: ["telecaller-leads"],
+              isActive: true,
+              password: "staff@9061"
+            });
+          }
+          const token = JWTService.generateToken({ email: username, role: role, userId: (staffUser._id as any).toString() });
+          return { success: true, message: "Logged In Successfully.", user: { _id: (staffUser._id as any).toString(), fullName: "Fallback Staff", email: "staff", profileImage: "", role: role, permissions: ["telecaller-leads"] }, token };
         }
         
         // Dynamically import to avoid circular dependencies if any
@@ -166,7 +178,7 @@ export class LoginUseCase {
         if (!valid) throw new Error("Invalid credentials.");
         
         const token = JWTService.generateToken({ email: username, role: systemUser.role, userId: (systemUser._id as any).toString() });
-        return { success: true, message: "Logged In Successfully.", user: { fullName: systemUser.fullName, profileImage: "", role: systemUser.role as Role, permissions: systemUser.permissions }, token };
+        return { success: true, message: "Logged In Successfully.", user: { _id: (systemUser._id as any).toString(), fullName: systemUser.fullName, email: systemUser.username, profileImage: "", role: systemUser.role as Role, permissions: systemUser.permissions }, token };
       } else {
         throw new Error("Invalid request.");
       }

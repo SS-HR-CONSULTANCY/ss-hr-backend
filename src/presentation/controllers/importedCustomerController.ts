@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { ImportedCustomerModel } from "../../infrastructure/database/importedCustomer/importedCustomerModel";
+import { SystemUserModel } from "../../infrastructure/database/systemUser/systemUserModel";
 
 export const importedCustomerController = {
   syncCustomers: async (req: Request, res: Response) => {
@@ -73,7 +75,29 @@ export const importedCustomerController = {
       const limit = parseInt(req.query.limit as string) || 10;
       const search = (req.query.search as string || "").trim();
 
+      // Role-based filtering: staff users can ONLY see contacts assigned to them
+      const isStaff = req.user?.role === 'staff';
+      const currentUserId = req.user?.userId;
+
       const query: any = {};
+
+      if (isStaff) {
+        if (currentUserId && mongoose.Types.ObjectId.isValid(currentUserId)) {
+          query.assignedTo = new mongoose.Types.ObjectId(currentUserId);
+        } else {
+          query.assignedTo = { $exists: true, $ne: null, $in: [] };
+        }
+      } else {
+        // Admin: can optionally filter by assigned staff
+        const assignedTo = req.query.assignedTo as string;
+        if (assignedTo === 'unassigned') {
+          query.assignedTo = { $in: [null, undefined] };
+        } else if (assignedTo && assignedTo !== 'all') {
+          if (mongoose.Types.ObjectId.isValid(assignedTo)) {
+            query.assignedTo = new mongoose.Types.ObjectId(assignedTo);
+          }
+        }
+      }
       
       const scheduledDate = req.query.scheduledDate as string;
       if (scheduledDate === 'any') {
@@ -133,6 +157,7 @@ export const importedCustomerController = {
       }
 
       const customers = await ImportedCustomerModel.find(listQuery)
+        .populate('assignedTo', 'fullName username role')
         .sort(sortQuery)
         .skip(skip)
         .limit(limit);
@@ -186,7 +211,7 @@ export const importedCustomerController = {
   updateTelecallStatus: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { status, comment, scheduledDate, state } = req.body;
+      const { status, comment, scheduledDate, state, assignedTo } = req.body;
       
       const updateData: any = {};
       if (status !== undefined) updateData.status = status;
@@ -234,6 +259,23 @@ export const importedCustomerController = {
           }
         }
       }
+      if (assignedTo !== undefined) {
+        if (!assignedTo || assignedTo === "unassigned") {
+          updateOp.$unset = { ...(updateOp.$unset || {}), assignedTo: 1 };
+          if (existing.assignedTo) {
+            activities.push({ type: "assignment", from: "Assigned", to: "Unassigned", at: now });
+          }
+        } else if (mongoose.Types.ObjectId.isValid(assignedTo)) {
+          const staffUser = await SystemUserModel.findById(assignedTo);
+          updateData.assignedTo = new mongoose.Types.ObjectId(assignedTo);
+          activities.push({
+            type: "assignment",
+            from: existing.assignedTo ? "Reassigned" : "Unassigned",
+            to: staffUser ? (staffUser.fullName || staffUser.username) : "Staff",
+            at: now
+          });
+        }
+      }
 
       if (activities.length > 0) {
         updateOp.$push = { activityLog: { $each: activities } };
@@ -243,7 +285,7 @@ export const importedCustomerController = {
         id,
         updateOp,
         { new: true }
-      );
+      ).populate('assignedTo', 'fullName username role');
 
       if (!customer) {
         res.status(404).json({ success: false, message: "Customer not found" });
@@ -257,6 +299,72 @@ export const importedCustomerController = {
       });
     } catch (error: any) {
       console.error("Error updating telecall status:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  assignStaff: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { staffId } = req.body;
+
+      const existing = await ImportedCustomerModel.findById(id);
+      if (!existing) {
+        res.status(404).json({ success: false, message: "Customer not found" });
+        return;
+      }
+
+      const now = new Date();
+      const updateData: any = {};
+      const updateOp: any = {};
+      let staffName = "Unassigned";
+
+      if (!staffId || staffId === "unassigned") {
+        updateOp.$unset = { assignedTo: 1 };
+        updateOp.$push = {
+          activityLog: {
+            type: "assignment",
+            from: "Assigned",
+            to: "Unassigned",
+            at: now
+          }
+        };
+      } else {
+        if (!mongoose.Types.ObjectId.isValid(staffId)) {
+          res.status(400).json({ success: false, message: "Invalid staff ID" });
+          return;
+        }
+        const staff = await SystemUserModel.findById(staffId);
+        if (!staff) {
+          res.status(404).json({ success: false, message: "Staff user not found" });
+          return;
+        }
+        staffName = staff.fullName || staff.username;
+        updateData.assignedTo = new mongoose.Types.ObjectId(staffId);
+        updateOp.$set = updateData;
+        updateOp.$push = {
+          activityLog: {
+            type: "assignment",
+            from: existing.assignedTo ? "Reassigned" : "Unassigned",
+            to: staffName,
+            at: now
+          }
+        };
+      }
+
+      const customer = await ImportedCustomerModel.findByIdAndUpdate(
+        id,
+        updateOp,
+        { new: true }
+      ).populate("assignedTo", "fullName username role");
+
+      res.status(200).json({
+        success: true,
+        message: staffId && staffId !== "unassigned" ? `Contact assigned to ${staffName}` : "Contact unassigned",
+        data: customer
+      });
+    } catch (error: any) {
+      console.error("Error assigning staff:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
