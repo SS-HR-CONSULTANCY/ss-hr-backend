@@ -367,5 +367,184 @@ export const importedCustomerController = {
       console.error("Error assigning staff:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
+  },
+
+  getStaffStats: async (req: Request, res: Response) => {
+    try {
+      const isSuperAdmin =
+        req.user?.role === "admin" &&
+        (req.user?.email === "tony" ||
+          (req.user as any)?.username === "tony" ||
+          req.user?.userId === "tony" ||
+          (req.user as any)?.fullName === "Super Admin");
+
+      if (!isSuperAdmin) {
+        res.status(403).json({ success: false, message: "Access denied. Super Admin only." });
+        return;
+      }
+
+      // Fetch all staff members from SystemUserModel
+      const staffMembers = await SystemUserModel.find({ role: "staff" }).select("-password").lean();
+
+      // Aggregate importedcustomers by assignedTo and status
+      const statusAggregation = await ImportedCustomerModel.aggregate([
+        {
+          $group: {
+            _id: {
+              assignedTo: "$assignedTo",
+              status: "$status"
+            },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Scheduled contacts for today
+      const today = new Date().toISOString().split("T")[0];
+      const todayStart = new Date(today);
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const todayEnd = new Date(today);
+      todayEnd.setUTCHours(23, 59, 59, 999);
+
+      const scheduledTodayAgg = await ImportedCustomerModel.aggregate([
+        {
+          $match: {
+            scheduledDate: { $gte: todayStart, $lte: todayEnd }
+          }
+        },
+        {
+          $group: {
+            _id: "$assignedTo",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const scheduledTodayMap = new Map<string, number>();
+      scheduledTodayAgg.forEach((item) => {
+        const key = item._id ? item._id.toString() : "unassigned";
+        scheduledTodayMap.set(key, item.count);
+      });
+
+      // Missed follow ups
+      const missedAgg = await ImportedCustomerModel.aggregate([
+        {
+          $match: {
+            scheduledDate: { $lt: todayStart },
+            status: { $in: ["Pending", "Contacted", "Need Follow Up", null, ""] }
+          }
+        },
+        {
+          $group: {
+            _id: "$assignedTo",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const missedMap = new Map<string, number>();
+      missedAgg.forEach((item) => {
+        const key = item._id ? item._id.toString() : "unassigned";
+        missedMap.set(key, item.count);
+      });
+
+      const totalLeads = await ImportedCustomerModel.countDocuments();
+
+      let unassignedTotal = 0;
+      let unassignedPending = 0;
+      let unassignedContacted = 0;
+      let unassignedNeedFollowUp = 0;
+      let unassignedCompleted = 0;
+
+      const staffStats = staffMembers.map((staff) => {
+        const staffIdStr = staff._id.toString();
+
+        let totalAssigned = 0;
+        let pending = 0;
+        let contacted = 0;
+        let needFollowUp = 0;
+        let processingApplication = 0;
+        let completed = 0;
+        let rejectedApplication = 0;
+        let notInterested = 0;
+
+        statusAggregation.forEach((row) => {
+          if (row._id.assignedTo && row._id.assignedTo.toString() === staffIdStr) {
+            const count = row.count || 0;
+            totalAssigned += count;
+            const status = row._id.status;
+            if (!status || status === "Pending") pending += count;
+            else if (status === "Contacted") contacted += count;
+            else if (status === "Need Follow Up") needFollowUp += count;
+            else if (status === "Processing Application") processingApplication += count;
+            else if (status === "Completed") completed += count;
+            else if (status === "Rejected Application") rejectedApplication += count;
+            else if (status === "Not Interested") notInterested += count;
+          }
+        });
+
+        const activeEngaged = contacted + needFollowUp + processingApplication + completed;
+        const contactRate = totalAssigned > 0 ? Math.round((activeEngaged / totalAssigned) * 100) : 0;
+        const conversionRate = totalAssigned > 0 ? Math.round((completed / totalAssigned) * 100) : 0;
+
+        return {
+          staffId: staffIdStr,
+          fullName: staff.fullName,
+          username: staff.username,
+          isActive: staff.isActive,
+          totalAssigned,
+          pending,
+          contacted,
+          needFollowUp,
+          processingApplication,
+          completed,
+          rejectedApplication,
+          notInterested,
+          scheduledToday: scheduledTodayMap.get(staffIdStr) || 0,
+          missedFollowUp: missedMap.get(staffIdStr) || 0,
+          contactRate,
+          conversionRate,
+        };
+      });
+
+      statusAggregation.forEach((row) => {
+        if (!row._id.assignedTo) {
+          const count = row.count || 0;
+          unassignedTotal += count;
+          const status = row._id.status;
+          if (!status || status === "Pending") unassignedPending += count;
+          else if (status === "Contacted") unassignedContacted += count;
+          else if (status === "Need Follow Up") unassignedNeedFollowUp += count;
+          else if (status === "Completed") unassignedCompleted += count;
+        }
+      });
+
+      const totalAssignedLeads = totalLeads - unassignedTotal;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          overall: {
+            totalLeads,
+            totalAssigned: totalAssignedLeads,
+            totalUnassigned: unassignedTotal,
+            activeStaffCount: staffMembers.filter((s) => s.isActive).length,
+          },
+          staffStats,
+          unassignedStats: {
+            total: unassignedTotal,
+            pending: unassignedPending,
+            contacted: unassignedContacted,
+            needFollowUp: unassignedNeedFollowUp,
+            completed: unassignedCompleted,
+            scheduledToday: scheduledTodayMap.get("unassigned") || 0,
+            missedFollowUp: missedMap.get("unassigned") || 0,
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error("Error fetching staff stats:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
   }
 };
