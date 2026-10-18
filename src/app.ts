@@ -30,6 +30,8 @@ import { adminExpenseRouter } from './presentation/routes/adminExpenseRouter';
 import { adminLogRouter } from './presentation/routes/adminLogRouter';
 import importedCustomerRouter from './presentation/routes/importedCustomerRouter';
 import systemUserRouter from './presentation/routes/systemUserRouter';
+import { adminFullStackContactRouter } from './presentation/routes/adminFullStackContactRouter';
+import { adminDailyDutyRouter } from './presentation/routes/adminDailyDutyRouter';
 
 const app = express();
 
@@ -104,6 +106,8 @@ app.use('/api/admin/expenses', adminExpenseRouter);
 app.use('/api/admin/logs', adminLogRouter);
 app.use('/api/admin/system-users', systemUserRouter);
 app.use('/api/imported-customers', importedCustomerRouter);
+app.use('/api/admin/full-stack-contacts', adminFullStackContactRouter);
+app.use('/api/admin/daily-duties', adminDailyDutyRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
