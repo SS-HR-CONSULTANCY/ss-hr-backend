@@ -10,6 +10,7 @@ export interface IImportedCustomer extends Document {
   linkedinUrl?: string;
   source: string;
   status: string;
+  isNewLead?: boolean;
   comment: string;
   scheduledDate?: Date;
   scheduledAt?: Date;
@@ -53,6 +54,7 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
       enum: ['Pending', 'Contacted', 'Need Follow Up', 'Not Interested', 'Processing Application', 'Completed', 'Rejected Application'], 
       default: 'Pending' 
     },
+    isNewLead: { type: Boolean, default: true },
     comment: { type: String, trim: true, default: '' },
     scheduledDate: { type: Date },
     scheduledAt: { type: Date, index: true },

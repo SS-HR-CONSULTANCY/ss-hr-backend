@@ -27,6 +27,10 @@ export const importedCustomerController = {
                 cvUrl: customer.cvUrl,
                 linkedinUrl: customer.linkedinUrl,
                 source: customer.source || 'ShareMyApps'
+              },
+              $setOnInsert: {
+                status: 'Pending',
+                isNewLead: true
               }
             },
             upsert: true
@@ -139,7 +143,7 @@ export const importedCustomerController = {
       const sortOrder = req.query.sortOrder as string;
       let sortQuery: any = { createdAt: 1, _id: 1 };
       if (sortBy) {
-        sortQuery = { [sortBy]: sortOrder === 'desc' ? -1 : 1, _id: 1 };
+        sortQuery = { [sortBy]: sortOrder === 'desc' ? -1 : 1, createdAt: 1, _id: 1 };
       }
 
       // Optional status filter (applies to table rows only, not to stats)
@@ -156,11 +160,39 @@ export const importedCustomerController = {
         listQuery.state = { $regex: `^${escapedState}$`, $options: 'i' };
       }
 
-      const customers = await ImportedCustomerModel.find(listQuery)
-        .populate('assignedTo', 'fullName username role')
-        .sort(sortQuery)
-        .skip(skip)
-        .limit(limit);
+      const statusPriorityExpr = {
+        $cond: {
+          if: {
+            $in: [
+              { $toLower: { $ifNull: ["$status", ""] } },
+              ["not interested", "rejected application"]
+            ]
+          },
+          then: 1,
+          else: 0
+        }
+      };
+
+      const pagedIds = await ImportedCustomerModel.aggregate([
+        { $match: listQuery },
+        { $addFields: { statusPriority: statusPriorityExpr } },
+        {
+          $sort: {
+            statusPriority: 1,
+            ...sortQuery
+          }
+        },
+        { $skip: skip },
+        { $limit: limit },
+        { $project: { _id: 1 } }
+      ]);
+
+      const ids = pagedIds.map((item: any) => item._id);
+      const docs = await ImportedCustomerModel.find({ _id: { $in: ids } })
+        .populate('assignedTo', 'fullName username role');
+
+      const docMap = new Map(docs.map((d: any) => [d._id.toString(), d]));
+      const customers = ids.map((id: any) => docMap.get(id.toString())).filter(Boolean);
 
       const filteredTotal = await ImportedCustomerModel.countDocuments(listQuery);
       const total = await ImportedCustomerModel.countDocuments(query);
@@ -214,7 +246,12 @@ export const importedCustomerController = {
       const { status, comment, scheduledDate, state, assignedTo } = req.body;
       
       const updateData: any = {};
-      if (status !== undefined) updateData.status = status;
+      if (status !== undefined) {
+        updateData.status = status;
+        if (status !== "Pending") {
+          updateData.isNewLead = false;
+        }
+      }
       if (comment !== undefined) updateData.comment = comment;
       if (state !== undefined) updateData.state = state;
       
