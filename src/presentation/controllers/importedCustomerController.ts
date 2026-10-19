@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { ImportedCustomerModel } from "../../infrastructure/database/importedCustomer/importedCustomerModel";
 import { SystemUserModel } from "../../infrastructure/database/systemUser/systemUserModel";
+import { openaiConfig } from "../../config/env";
 
 export const importedCustomerController = {
   syncCustomers: async (req: Request, res: Response) => {
@@ -582,6 +583,63 @@ export const importedCustomerController = {
     } catch (error: any) {
       console.error("Error fetching staff stats:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  summarizeComment: async (req: Request, res: Response) => {
+    try {
+      const { content } = req.body;
+      if (!content || typeof content !== "string" || !content.trim()) {
+        res.status(400).json({ success: false, message: "Content is required for summarization" });
+        return;
+      }
+
+      const apiKey = openaiConfig.apiKey || process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        res.status(500).json({ success: false, message: "OpenAI API key is not configured on the server." });
+        return;
+      }
+
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert AI assistant for telecallers at SS HR Consultancy. The telecaller will paste an entire raw conversation, call transcript, or WhatsApp chat with a candidate/lead. Your job is to summarize this conversation into a concise, professional telecaller note (maximum 2-3 sentences or clean bullet points). Highlight: candidate's interest level, qualification/experience, preferred role/location/salary if mentioned, and agreed next steps. Output ONLY the summary without any prefix, quotes, or unnecessary pleasantries."
+            },
+            {
+              role: "user",
+              content: content.trim()
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 250,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("OpenAI API call failed:", errorData);
+        res.status(502).json({ success: false, message: "AI service failed to generate summary", error: errorData });
+        return;
+      }
+
+      const data: any = await response.json();
+      const summary = data?.choices?.[0]?.message?.content?.trim() || "";
+
+      res.status(200).json({
+        success: true,
+        data: { summary }
+      });
+    } catch (error: any) {
+      console.error("Error summarizing comment with AI:", error);
+      res.status(500).json({ success: false, message: "Internal server error while summarizing comment" });
     }
   }
 };

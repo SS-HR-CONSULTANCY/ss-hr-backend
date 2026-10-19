@@ -33,3 +33,8 @@ export const googleClientConfig = {
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
     googleCallbackURL: process.env.NODE_ENV === 'development' ? process.env.GOOGLE_CALLBACK_LOCAL_URL : process.env.GOOGLE_CALLBACK_PRODUCTION_URL,
 }
+
+export const openaiConfig = {
+    apiKey: process.env.OPENAI_API_KEY || '',
+}
+
