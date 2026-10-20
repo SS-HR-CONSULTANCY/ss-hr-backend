@@ -202,6 +202,81 @@ export const importedCustomerController = {
       const contactedCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Contacted' });
       const needFollowUpCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Need Follow Up' });
 
+      // Calculate start and end of "today" for status changes (accounting for client date and IST)
+      const clientToday = (req.query.today as string) || new Date().toISOString().split('T')[0];
+      let dayRangeStart: Date;
+      let dayRangeEnd: Date;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(clientToday)) {
+        const [year, month, day] = clientToday.split('-').map(Number);
+        const utcStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const utcEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+        // India is UTC+5:30. In IST, 00:00:00 is 18:30:00 UTC of previous day
+        const istStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - 5.5 * 60 * 60 * 1000);
+        const istEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - 5.5 * 60 * 60 * 1000);
+        dayRangeStart = istStart < utcStart ? istStart : utcStart;
+        dayRangeEnd = istEnd > utcEnd ? istEnd : utcEnd;
+      } else {
+        const now = new Date();
+        dayRangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        dayRangeEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      }
+
+      // Determine staff scope for "My Calls Today"
+      const callsScope: any = {};
+      if (isStaff) {
+        if (currentUserId && mongoose.Types.ObjectId.isValid(currentUserId)) {
+          const staffObjId = new mongoose.Types.ObjectId(currentUserId);
+          callsScope.$or = [
+            { assignedTo: staffObjId },
+            { 'activityLog.by': staffObjId }
+          ];
+        }
+      } else {
+        const assignedTo = req.query.assignedTo as string;
+        if (assignedTo === 'unassigned') {
+          callsScope.assignedTo = { $in: [null, undefined] };
+        } else if (assignedTo && assignedTo !== 'all' && mongoose.Types.ObjectId.isValid(assignedTo)) {
+          const staffObjId = new mongoose.Types.ObjectId(assignedTo);
+          callsScope.$or = [
+            { assignedTo: staffObjId },
+            { 'activityLog.by': staffObjId }
+          ];
+        }
+      }
+
+      // Count status changes from Pending to Contacted today
+      const callsAgg = await ImportedCustomerModel.aggregate([
+        {
+          $match: {
+            ...callsScope,
+            'activityLog.type': 'status'
+          }
+        },
+        { $unwind: '$activityLog' },
+        {
+          $match: {
+            'activityLog.type': 'status',
+            'activityLog.from': { $in: ['Pending', 'pending', '', null] },
+            'activityLog.to': { $regex: /^contacted$/i },
+            'activityLog.at': { $gte: dayRangeStart, $lte: dayRangeEnd }
+          }
+        },
+        { $count: 'total' }
+      ]);
+
+      const fallbackCount = await ImportedCustomerModel.countDocuments({
+        ...callsScope,
+        status: 'Contacted',
+        updatedAt: { $gte: dayRangeStart, $lte: dayRangeEnd },
+        $or: [
+          { activityLog: { $exists: false } },
+          { activityLog: { $size: 0 } },
+          { 'activityLog.type': { $ne: 'status' } }
+        ]
+      });
+
+      const myCallsTodayCount = (callsAgg.length > 0 ? callsAgg[0].total : 0) + fallbackCount;
+
       const rawStates = await ImportedCustomerModel.distinct('state', { state: { $exists: true, $nin: ['', null] } });
       const getStatePriority = (name: string): number => {
         const clean = name.trim().toLowerCase().replace(/\s+/g, '');
@@ -231,7 +306,8 @@ export const importedCustomerController = {
             total,
             pending: pendingCount,
             contacted: contactedCount,
-            needFollowUp: needFollowUpCount
+            needFollowUp: needFollowUpCount,
+            myCallsToday: myCallsTodayCount
           }
         }
       });
@@ -276,8 +352,18 @@ export const importedCustomerController = {
       const toDay = (d?: Date | string | null) =>
         d ? new Date(d).toISOString().split("T")[0] : "";
 
+      const performedBy = req.user?.userId && mongoose.Types.ObjectId.isValid(req.user.userId)
+        ? new mongoose.Types.ObjectId(req.user.userId)
+        : undefined;
+
       if (status !== undefined && status !== existing.status) {
-        activities.push({ type: "status", from: existing.status || "Pending", to: status, at: now });
+        activities.push({
+          type: "status",
+          from: existing.status || "Pending",
+          to: status,
+          at: now,
+          by: performedBy
+        });
       }
       if (comment !== undefined && (comment || "").trim() !== (existing.comment || "").trim()) {
         activities.push({ type: "comment", from: existing.comment || "", to: (comment || "").trim(), at: now });

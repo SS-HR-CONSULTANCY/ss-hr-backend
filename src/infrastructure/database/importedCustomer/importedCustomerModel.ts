@@ -27,6 +27,7 @@ export interface IImportedCustomerActivity {
   from?: string;
   to?: string;
   at: Date;
+  by?: Types.ObjectId;
 }
 
 const ActivitySchema = new Schema<IImportedCustomerActivity>(
@@ -35,6 +36,7 @@ const ActivitySchema = new Schema<IImportedCustomerActivity>(
     from: { type: String, default: '' },
     to: { type: String, default: '' },
     at: { type: Date, default: Date.now },
+    by: { type: Schema.Types.ObjectId, ref: 'SystemUser' },
   },
   { _id: false }
 );
