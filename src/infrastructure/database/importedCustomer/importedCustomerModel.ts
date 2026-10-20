@@ -53,7 +53,7 @@ const ImportedCustomerSchema = new Schema<IImportedCustomer>(
     source: { type: String, default: 'ShareMyApps' },
     status: { 
       type: String, 
-      enum: ['Pending', 'Contacted', 'Need Follow Up', 'Not Interested', 'Processing Application', 'Completed', 'Rejected Application'], 
+      enum: ['Pending', 'Contacted', 'Re-contacted', 'Recontacted', 'Need Follow Up', 'Not Interested', 'Processing Application', 'Rejected Application', 'Completed'], 
       default: 'Pending' 
     },
     isNewLead: { type: Boolean, default: true },

@@ -555,7 +555,7 @@ export const importedCustomerController = {
         {
           $match: {
             scheduledDate: { $lt: todayStart },
-            status: { $in: ["Pending", "Contacted", "Need Follow Up", null, ""] }
+            status: { $in: ["Pending", "Contacted", "Re-contacted", "Recontacted", "Need Follow Up", null, ""] }
           }
         },
         {
@@ -598,7 +598,7 @@ export const importedCustomerController = {
             totalAssigned += count;
             const status = row._id.status;
             if (!status || status === "Pending") pending += count;
-            else if (status === "Contacted") contacted += count;
+            else if (status === "Contacted" || status === "Re-contacted" || status === "Recontacted") contacted += count;
             else if (status === "Need Follow Up") needFollowUp += count;
             else if (status === "Processing Application") processingApplication += count;
             else if (status === "Completed") completed += count;
@@ -637,7 +637,7 @@ export const importedCustomerController = {
           unassignedTotal += count;
           const status = row._id.status;
           if (!status || status === "Pending") unassignedPending += count;
-          else if (status === "Contacted") unassignedContacted += count;
+          else if (status === "Contacted" || status === "Re-contacted" || status === "Recontacted") unassignedContacted += count;
           else if (status === "Need Follow Up") unassignedNeedFollowUp += count;
           else if (status === "Completed") unassignedCompleted += count;
         }
@@ -697,7 +697,7 @@ export const importedCustomerController = {
           messages: [
             {
               role: "system",
-              content: "You are an expert AI assistant for telecallers at SS HR Consultancy. The telecaller will paste an entire raw conversation, call transcript, or WhatsApp chat with a candidate/lead. Your job is to summarize this conversation into a concise, professional telecaller note (maximum 2-3 sentences or clean bullet points). Highlight: candidate's interest level, qualification/experience, preferred role/location/salary if mentioned, and agreed next steps. Output ONLY the summary without any prefix, quotes, or unnecessary pleasantries."
+              content: "You are an expert AI assistant for telecallers at SS HR Consultancy. The telecaller will paste an entire raw conversation, call transcript, or WhatsApp chat with a candidate/lead. Your job is to summarize this conversation into a concise, professional telecaller note (maximum 2-3 sentences or clean bullet points). Only include information that is explicitly mentioned in the conversation — such as candidate's interest level, experience, preferred role, location, salary, or agreed next steps. Do NOT mention or reference anything that was not discussed (e.g. never say 'No qualifications mentioned' or 'No salary mentioned' or similar). Output ONLY the summary without any prefix, quotes, or unnecessary pleasantries."
             },
             {
               role: "user",

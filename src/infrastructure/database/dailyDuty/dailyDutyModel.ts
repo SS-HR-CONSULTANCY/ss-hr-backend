@@ -35,6 +35,10 @@ export interface IDailyDuty extends Document {
   completedCount: number;
   status: DutyStatus;
   progress: number; // 0 - 100
+  isCarriedForward?: boolean;
+  originalDutyDate?: string;
+  carriedForwardFrom?: string;
+  carriedForwardAt?: Date;
   stuckInfo?: {
     isStuck: boolean;
     reason?: string;
@@ -108,6 +112,10 @@ const DailyDutySchema = new Schema<IDailyDuty>(
       index: true,
     },
     progress: { type: Number, default: 0, min: 0, max: 100 },
+    isCarriedForward: { type: Boolean, default: false, index: true },
+    originalDutyDate: { type: String, index: true },
+    carriedForwardFrom: { type: String, index: true },
+    carriedForwardAt: { type: Date },
     stuckInfo: {
       isStuck: { type: Boolean, default: false, index: true },
       reason: { type: String, default: "" },

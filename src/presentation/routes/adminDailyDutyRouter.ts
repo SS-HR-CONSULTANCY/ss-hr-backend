@@ -10,9 +10,60 @@ export const adminDailyDutyRouter = Router();
 adminDailyDutyRouter.use(authMiddleware);
 
 // Helper to get formatted YYYY-MM-DD
-const getTodayString = (): string => {
+const getTodayString = (clientToday?: string): string => {
+  if (clientToday && /^\d{4}-\d{2}-\d{2}$/.test(clientToday)) {
+    return clientToday;
+  }
   const now = new Date();
   return now.toISOString().split("T")[0];
+};
+
+// Helper to automatically carry forward uncompleted duties from past days to today
+export const autoCarryForwardPendingDuties = async (clientToday?: string): Promise<number> => {
+  try {
+    const today = getTodayString(clientToday);
+
+    // Find any uncompleted duties from before today
+    const pastPendingDuties = await DailyDutyModel.find({
+      dutyDate: { $lt: today },
+      status: { $in: ["pending", "in_progress", "stuck"] },
+    });
+
+    if (!pastPendingDuties || pastPendingDuties.length === 0) {
+      return 0;
+    }
+
+    const bulkOps = pastPendingDuties.map((duty) => {
+      const origDate = duty.originalDutyDate || duty.dutyDate;
+      const prevDate = duty.dutyDate;
+      const newDeadline = computeDeadline(today, duty.deadlineTime);
+
+      return {
+        updateOne: {
+          filter: { _id: duty._id },
+          update: {
+            $set: {
+              dutyDate: today,
+              deadline: newDeadline,
+              isCarriedForward: true,
+              originalDutyDate: origDate,
+              carriedForwardFrom: prevDate,
+              carriedForwardAt: new Date(),
+            },
+          },
+        },
+      };
+    });
+
+    if (bulkOps.length > 0) {
+      await DailyDutyModel.bulkWrite(bulkOps);
+    }
+
+    return bulkOps.length;
+  } catch (error) {
+    console.error("Error auto-carrying forward pending duties:", error);
+    return 0;
+  }
 };
 
 // Helper to parse deadline timestamp
@@ -53,10 +104,53 @@ adminDailyDutyRouter.get("/staff-members", async (req: Request, res: Response, n
 });
 
 // ==========================================
+// 1.5 GET /pending-count - Pending & Stuck Duties Count for Sidebar Badge
+// ==========================================
+adminDailyDutyRouter.get("/pending-count", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const clientToday = (req.query.today as string) || (req.query.date as string);
+    await autoCarryForwardPendingDuties(clientToday);
+
+    const isStaff = req.user?.role === "staff";
+    const currentUserId = req.user?.userId;
+    const today = getTodayString(clientToday);
+
+    const baseQuery: any = { dutyDate: today };
+    if (isStaff && currentUserId && Types.ObjectId.isValid(currentUserId)) {
+      baseQuery.assignedTo = new Types.ObjectId(currentUserId);
+    }
+
+    const [pendingCount, stuckCount] = await Promise.all([
+      DailyDutyModel.countDocuments({
+        ...baseQuery,
+        status: "pending",
+      }),
+      DailyDutyModel.countDocuments({
+        ...baseQuery,
+        $or: [{ status: "stuck" }, { "stuckInfo.isStuck": true }],
+      }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        pendingCount,
+        stuckCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
 // 2. GET / - List duties with filters & stats
 // ==========================================
 adminDailyDutyRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const clientToday = (req.query.today as string) || (req.query.date as string);
+    await autoCarryForwardPendingDuties(clientToday);
+    const today = getTodayString(clientToday);
     const isStaff = req.user?.role === "staff";
     const currentUserId = req.user?.userId;
 
@@ -71,7 +165,15 @@ adminDailyDutyRouter.get("/", async (req: Request, res: Response, next: NextFunc
 
     // Date filtering (if date is not 'all')
     if (date && date !== "all") {
-      query.dutyDate = date;
+      if (date === today) {
+        query.dutyDate = date;
+      } else {
+        query.$or = [
+          { dutyDate: date },
+          { carriedForwardFrom: date },
+          { originalDutyDate: date },
+        ];
+      }
     }
 
     // Role-based staff filtering
@@ -105,10 +207,16 @@ adminDailyDutyRouter.get("/", async (req: Request, res: Response, next: NextFunc
     // Search query in title or description
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.$or = [
+      const searchOr = [
         { title: { $regex: escaped, $options: "i" } },
         { description: { $regex: escaped, $options: "i" } },
       ];
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: searchOr }];
+        delete query.$or;
+      } else {
+        query.$or = searchOr;
+      }
     }
 
     // Fetch matching duties
@@ -122,7 +230,15 @@ adminDailyDutyRouter.get("/", async (req: Request, res: Response, next: NextFunc
     // Calculate aggregated stats for the selected date scope (or overall if date='all')
     const statsQuery: any = {};
     if (date && date !== "all") {
-      statsQuery.dutyDate = date;
+      if (date === today) {
+        statsQuery.dutyDate = date;
+      } else {
+        statsQuery.$or = [
+          { dutyDate: date },
+          { carriedForwardFrom: date },
+          { originalDutyDate: date },
+        ];
+      }
     }
     if (isStaff && currentUserId && Types.ObjectId.isValid(currentUserId)) {
       statsQuery.assignedTo = new Types.ObjectId(currentUserId);
@@ -237,6 +353,8 @@ adminDailyDutyRouter.post("/", async (req: Request, res: Response, next: NextFun
         targetCount: Number(targetCount) || 0,
         status: "pending",
         progress: 0,
+        isCarriedForward: false,
+        originalDutyDate: dutyDate,
         stuckInfo: { isStuck: false },
         validationInfo: { isValidated: false },
         comments: [],
