@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 export interface NormalizedGoogleReview {
   googleReviewId: string;
   clientName: string;
@@ -25,14 +28,22 @@ export class OutscraperService {
   }
 
   async fetchGoogleReviews(limit: number = 50): Promise<NormalizedGoogleReview[]> {
+    dotenv.config();
+    const serpApiKey = process.env.SERPAPI_API_KEY || this.serpApiKey;
+    const serpDataId =
+      process.env.SERPAPI_DATA_ID || this.serpDataId || "0x3e5f5d3945927241:0xec15a179df5da7c0";
+    const outscraperApiKey = process.env.OUTSCRAPER_API_KEY || this.outscraperApiKey;
+    const outscraperQuery =
+      process.env.OUTSCRAPER_QUERY || this.outscraperQuery || "SS HR Consultancy Tours and Travels, Dubai";
+
     // 1. Prefer SerpApi if SERPAPI_API_KEY is configured
-    if (this.serpApiKey) {
-      return this.fetchWithSerpApi();
+    if (serpApiKey) {
+      return this.fetchWithSerpApi(serpApiKey, serpDataId);
     }
 
     // 2. Fall back to Outscraper if OUTSCRAPER_API_KEY is configured
-    if (this.outscraperApiKey) {
-      return this.fetchWithOutscraper(limit);
+    if (outscraperApiKey) {
+      return this.fetchWithOutscraper(limit, outscraperApiKey, outscraperQuery);
     }
 
     throw new Error(
@@ -40,12 +51,12 @@ export class OutscraperService {
     );
   }
 
-  private async fetchWithSerpApi(): Promise<NormalizedGoogleReview[]> {
+  private async fetchWithSerpApi(apiKey: string, dataId: string): Promise<NormalizedGoogleReview[]> {
     const url = new URL("https://serpapi.com/search.json");
     url.searchParams.set("engine", "google_maps_reviews");
-    url.searchParams.set("data_id", this.serpDataId);
+    url.searchParams.set("data_id", dataId);
     url.searchParams.set("sort_by", "newestFirst");
-    url.searchParams.set("api_key", this.serpApiKey);
+    url.searchParams.set("api_key", apiKey);
 
     const response = await fetch(url.toString(), {
       method: "GET",
@@ -101,9 +112,13 @@ export class OutscraperService {
     return normalizedReviews;
   }
 
-  private async fetchWithOutscraper(limit: number): Promise<NormalizedGoogleReview[]> {
+  private async fetchWithOutscraper(
+    limit: number,
+    apiKey: string,
+    query: string
+  ): Promise<NormalizedGoogleReview[]> {
     const url = new URL("https://api.app.outscraper.com/maps/reviews-v3");
-    url.searchParams.set("query", this.outscraperQuery);
+    url.searchParams.set("query", query);
     url.searchParams.set("reviewsLimit", String(limit));
     url.searchParams.set("sort", "newest");
     url.searchParams.set("async", "false");
@@ -111,7 +126,7 @@ export class OutscraperService {
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
-        "X-API-KEY": this.outscraperApiKey,
+        "X-API-KEY": apiKey,
         Accept: "application/json",
       },
     });
