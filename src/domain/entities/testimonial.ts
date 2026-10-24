@@ -10,6 +10,7 @@ export class Testimonial {
     public createdAt: Date,
     public updatedAt: Date,
     public rating?: number,
-    public reviewDate?: Date
+    public reviewDate?: Date,
+    public googleReviewId?: string
   ) {}
 }

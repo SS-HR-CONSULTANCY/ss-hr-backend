@@ -43,4 +43,8 @@ jobs:
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},\
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},\
           GOOGLE_CALLBACK_PRODUCTION_URL=${{ secrets.GOOGLE_CALLBACK_PRODUCTION_URL }},\
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},\
+          SERPAPI_API_KEY=${{ secrets.SERPAPI_API_KEY }},\
+          SERPAPI_DATA_ID=0x3e5f5d3945927241:0xec15a179df5da7c0,\
           SESSION_SECRET=${{ secrets.SESSION_SECRET }}"
+

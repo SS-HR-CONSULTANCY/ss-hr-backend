@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import { Testimonial } from "../../../domain/entities/testimonial";
 import { ITestimonial, TestimonialModel } from "./testimonialModel";
 import { ApiPaginationRequest, ApiResponse } from "../../dtos/common.dts";
-import { AdminFetchAllTestimonials, CreateTestimonial, ITestimonialRepository } from "../../../domain/repositories/ITestimonialRepository";
+import { AdminFetchAllTestimonials, CreateTestimonial, ITestimonialRepository, UpsertGoogleReviewData } from "../../../domain/repositories/ITestimonialRepository";
 
 export class TestimonialRepositoryImpl implements ITestimonialRepository {
   private mapToEntity(testimonial: ITestimonial): Testimonial {
@@ -15,7 +15,8 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
       testimonial.createdAt,
       testimonial.updatedAt,
       testimonial.rating || 5,
-      testimonial.reviewDate || testimonial.createdAt
+      testimonial.reviewDate || testimonial.createdAt,
+      testimonial.googleReviewId
     );
   }
 
@@ -53,6 +54,7 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
             rating: 1,
             reviewDate: 1,
             isVisible: 1,
+            googleReviewId: 1,
             createdAt: 1,
             updatedAt: 1,
           }
@@ -132,6 +134,7 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
             rating: 1,
             reviewDate: 1,
             isVisible: 1,
+            googleReviewId: 1,
             createdAt: 1,
             updatedAt: 1,
           }
@@ -152,6 +155,58 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
       };
     } catch (error) {
       throw new Error("Failed to fetch visible testimonials from database.");
+    }
+  }
+
+  async upsertGoogleReview(reviewData: UpsertGoogleReviewData): Promise<{ isNew: boolean }> {
+    try {
+      let existing = null;
+      if (reviewData.googleReviewId) {
+        existing = await TestimonialModel.findOne({ googleReviewId: reviewData.googleReviewId });
+      }
+
+      if (!existing) {
+        existing = await TestimonialModel.findOne({
+          clientName: reviewData.clientName,
+          testimonial: reviewData.testimonial,
+        });
+        if (existing) {
+          existing.googleReviewId = reviewData.googleReviewId;
+          existing.rating = reviewData.rating;
+          existing.reviewDate = reviewData.reviewDate;
+          if (reviewData.designation) {
+            existing.designation = reviewData.designation;
+          }
+          await existing.save();
+          return { isNew: false };
+        }
+      }
+
+      if (existing) {
+        existing.clientName = reviewData.clientName;
+        existing.testimonial = reviewData.testimonial;
+        existing.rating = reviewData.rating;
+        existing.reviewDate = reviewData.reviewDate;
+        if (reviewData.designation) {
+          existing.designation = reviewData.designation;
+        }
+        await existing.save();
+        return { isNew: false };
+      } else {
+        await TestimonialModel.create({
+          clientName: reviewData.clientName,
+          designation: reviewData.designation || "Google Reviewer",
+          testimonial: reviewData.testimonial,
+          rating: reviewData.rating,
+          reviewDate: reviewData.reviewDate,
+          googleReviewId: reviewData.googleReviewId,
+          isVisible: true,
+        });
+        return { isNew: true };
+      }
+    } catch (error) {
+      console.error("Error upserting Google review:", error);
+      throw error;
     }
   }
 

@@ -5,6 +5,7 @@ import { adminTestimonialController } from "../controllers/adminTestimonialContr
 const router = Router();
 
 router.post("/", authMiddleware, adminTestimonialController.createTestimonial);
+router.post("/sync", authMiddleware, adminTestimonialController.syncGoogleReviews);
 router.get("/", authMiddleware, adminTestimonialController.getAllTestimonials);
 router.get("/:id", authMiddleware, adminTestimonialController.getTestimonialById);
 router.patch("/:id", authMiddleware, adminTestimonialController.updateTestimonial);

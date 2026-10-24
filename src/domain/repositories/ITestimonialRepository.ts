@@ -3,7 +3,16 @@ import { Testimonial } from "../entities/testimonial"
 import {ApiPaginationRequest,ApiResponse} from "../../infrastructure/dtos/common.dts"
 
 export type CreateTestimonial = Partial<Pick<Testimonial, "clientName" | "designation" | "testimonial" | "rating" | "reviewDate">>;
-export type AdminFetchAllTestimonials = Array<Pick<Testimonial, "_id" | "clientName" | "designation" | "testimonial" | "isVisible" | "createdAt" | "updatedAt" | "rating" | "reviewDate">>;
+export type AdminFetchAllTestimonials = Array<Pick<Testimonial, "_id" | "clientName" | "designation" | "testimonial" | "isVisible" | "createdAt" | "updatedAt" | "rating" | "reviewDate" | "googleReviewId">>;
+
+export type UpsertGoogleReviewData = {
+  clientName: string;
+  designation?: string;
+  testimonial: string;
+  rating: number;
+  reviewDate: Date;
+  googleReviewId: string;
+};
 
 export interface ITestimonialRepository {
 
@@ -19,6 +28,8 @@ export interface ITestimonialRepository {
 
     getTotalCount():Promise<number>;
 
-    findVisibleTestimonials({page,limit}:ApiPaginationRequest):Promise<ApiResponse<AdminFetchAllTestimonials>>
+    findVisibleTestimonials({page,limit}:ApiPaginationRequest):Promise<ApiResponse<AdminFetchAllTestimonials>>;
+
+    upsertGoogleReview(reviewData: UpsertGoogleReviewData): Promise<{ isNew: boolean }>;
 
 }

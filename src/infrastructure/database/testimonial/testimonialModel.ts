@@ -8,6 +8,7 @@ export interface ITestimonial extends Document {
   rating?: number;
   reviewDate?: Date;
   isVisible: boolean;
+  googleReviewId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +53,12 @@ const TestimonialSchema = new Schema<ITestimonial>(
     isVisible: {
       type: Boolean,
       default: true,
+    },
+
+    googleReviewId: {
+      type: String,
+      sparse: true,
+      index: true,
     },
   },
   {

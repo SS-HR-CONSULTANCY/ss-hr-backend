@@ -11,6 +11,7 @@ import { ApiResponse } from "../../infrastructure/dtos/common.dts";
 import { handleUseCaseError } from "../../infrastructure/error/useCaseError";
 import { TestimonialRepositoryImpl } from "../../infrastructure/database/testimonial/testimonialRepositoryImpl";
 import { AdminFetchAllTestimonials } from "../../domain/repositories/ITestimonialRepository";
+import { OutscraperService } from "../../infrastructure/services/outscraperService";
 
 
 export class CreateTestimonialUseCase {
@@ -176,3 +177,44 @@ export class GetTestimonialStatsUseCase {
     }
   }
 }
+
+export class SyncGoogleReviewsUseCase {
+  constructor(
+    private testimonialRepository: TestimonialRepositoryImpl,
+    private outscraperService: OutscraperService
+  ) {}
+
+  async execute(): Promise<{
+    success: boolean;
+    message: string;
+    totalFetched: number;
+    newAdded: number;
+    updated: number;
+  }> {
+    try {
+      const reviews = await this.outscraperService.fetchGoogleReviews(50);
+      let newAdded = 0;
+      let updated = 0;
+
+      for (const review of reviews) {
+        const result = await this.testimonialRepository.upsertGoogleReview(review);
+        if (result.isNew) {
+          newAdded++;
+        } else {
+          updated++;
+        }
+      }
+
+      return {
+        success: true,
+        message: `Synced ${reviews.length} reviews from Google (${newAdded} new, ${updated} updated)`,
+        totalFetched: reviews.length,
+        newAdded,
+        updated,
+      };
+    } catch (error) {
+      throw handleUseCaseError(error || "Failed to sync Google reviews");
+    }
+  }
+}
+

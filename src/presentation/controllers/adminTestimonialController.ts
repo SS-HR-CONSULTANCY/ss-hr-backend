@@ -7,13 +7,16 @@ import {
     DeleteTestimonialUseCase,
     GetTestimonialByIdUseCase,
     GetAllTestimonialsUseCase,
-    GetTestimonialStatsUseCase
+    GetTestimonialStatsUseCase,
+    SyncGoogleReviewsUseCase
 } from '../../application/adminUse-cases/adminTestimonialUseCases';
 import { RandomStringGenerator } from "../../infrastructure/helper/generateRandomString";
 import { TestimonialRepositoryImpl } from "../../infrastructure/database/testimonial/testimonialRepositoryImpl";
+import { OutscraperService } from "../../infrastructure/services/outscraperService";
 
 const randomStringGenerator = new RandomStringGenerator();
 const testimonialRepositoryImpl = new TestimonialRepositoryImpl();
+const outscraperService = new OutscraperService();
 
 const getTestimonialStatsUseCase = new GetTestimonialStatsUseCase(testimonialRepositoryImpl);
 const deleteTestimonialUseCase = new DeleteTestimonialUseCase(testimonialRepositoryImpl);
@@ -21,6 +24,7 @@ const getTestimonialByIdUseCase = new GetTestimonialByIdUseCase(testimonialRepos
 const getAllTestimonialsUseCase = new GetAllTestimonialsUseCase(testimonialRepositoryImpl);
 const updateTestimonialUseCase = new UpdateTestimonialUseCase(testimonialRepositoryImpl);
 const createTestimonialUseCase = new CreateTestimonialUseCase(testimonialRepositoryImpl);
+const syncGoogleReviewsUseCase = new SyncGoogleReviewsUseCase(testimonialRepositoryImpl, outscraperService);
 
 export class AdminTestimonialController {
     constructor(
@@ -29,7 +33,8 @@ export class AdminTestimonialController {
         private deleteTestimonialUseCase: DeleteTestimonialUseCase,
         private getTestimonialByIdUseCase: GetTestimonialByIdUseCase,
         private getAllTestimonialsUseCase: GetAllTestimonialsUseCase,
-        private getTestimonialStatsUseCase: GetTestimonialStatsUseCase
+        private getTestimonialStatsUseCase: GetTestimonialStatsUseCase,
+        private syncGoogleReviewsUseCase: SyncGoogleReviewsUseCase
     ) {
         this.createTestimonial = this.createTestimonial.bind(this);
         this.updateTestimonial = this.updateTestimonial.bind(this);
@@ -37,6 +42,7 @@ export class AdminTestimonialController {
         this.getTestimonialById = this.getTestimonialById.bind(this);
         this.getAllTestimonials = this.getAllTestimonials.bind(this);
         this.getTestimonialStats = this.getTestimonialStats.bind(this);
+        this.syncGoogleReviews = this.syncGoogleReviews.bind(this);
     }
 
     async createTestimonial(req: Request, res: Response) {
@@ -107,6 +113,15 @@ export class AdminTestimonialController {
             HandleError.handle(error, res);
         }
     }
+
+    async syncGoogleReviews(req: Request, res: Response) {
+        try {
+            const result = await this.syncGoogleReviewsUseCase.execute();
+            return res.status(200).json(result);
+        } catch (error) {
+            HandleError.handle(error, res);
+        }
+    }
 }
 
 export const adminTestimonialController = new AdminTestimonialController(
@@ -115,5 +130,6 @@ export const adminTestimonialController = new AdminTestimonialController(
     deleteTestimonialUseCase,
     getTestimonialByIdUseCase,
     getAllTestimonialsUseCase,
-    getTestimonialStatsUseCase
+    getTestimonialStatsUseCase,
+    syncGoogleReviewsUseCase
 );
