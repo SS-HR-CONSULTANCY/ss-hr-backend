@@ -20,12 +20,14 @@ export class CreateTestimonialUseCase {
 
   async execute(data: CreateTestimonialRequest): Promise<CreateTestimonialResponse> {
     try {
-      const { clientName, designation, testimonial } = data;
+      const { clientName, designation, testimonial, rating, reviewDate } = data;
 
       const createdTestimonial = await this.testimonialRepository.createTestimonial({
         clientName,
-        designation,
+        designation: designation || "Customer",
         testimonial,
+        rating: typeof rating === "number" ? rating : 5,
+        reviewDate: reviewDate ? new Date(reviewDate) : new Date(),
       });
 
       if(!createdTestimonial) throw new Error("Testimonial adding failed");
@@ -39,6 +41,8 @@ export class CreateTestimonialUseCase {
           clientName: createdTestimonial.clientName,
           designation: createdTestimonial.designation,
           testimonial: createdTestimonial.testimonial,
+          rating: createdTestimonial.rating,
+          reviewDate: createdTestimonial.reviewDate,
         },
       };
     } catch (error) {
@@ -54,7 +58,7 @@ export class UpdateTestimonialUseCase {
 
   async execute(data: UpdateTestimonialRequest): Promise<UpdateTestimonialResponse> {
     try {
-      const { _id, clientName, designation, isVisible, testimonial } = data;
+      const { _id, clientName, designation, isVisible, testimonial, rating, reviewDate } = data;
 
       const existingTestimonial = await this.testimonialRepository.findTestimonialById(_id);
       if (!existingTestimonial) throw new Error("Testimonial not found");
@@ -63,6 +67,8 @@ export class UpdateTestimonialUseCase {
       existingTestimonial.designation = designation || existingTestimonial.designation;
       existingTestimonial.isVisible = isVisible ?? existingTestimonial.isVisible;
       existingTestimonial.testimonial = testimonial || existingTestimonial.testimonial;
+      if (typeof rating === "number") existingTestimonial.rating = rating;
+      if (reviewDate) existingTestimonial.reviewDate = new Date(reviewDate);
 
       const result = await this.testimonialRepository.updateTestimonial(existingTestimonial);
       if (!result) throw new Error("Failed to update testimonial");

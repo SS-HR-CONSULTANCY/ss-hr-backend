@@ -2,8 +2,8 @@ import {Types} from "mongoose"
 import { Testimonial } from "../entities/testimonial"
 import {ApiPaginationRequest,ApiResponse} from "../../infrastructure/dtos/common.dts"
 
-export type CreateTestimonial = Partial<Pick<Testimonial,"clientName" | "designation" | "testimonial"> >
-export type AdminFetchAllTestimonials = Array<Pick<Testimonial,"_id"|"clientName"|"designation"|"testimonial"|"isVisible"|"createdAt"|"updatedAt">>
+export type CreateTestimonial = Partial<Pick<Testimonial, "clientName" | "designation" | "testimonial" | "rating" | "reviewDate">>;
+export type AdminFetchAllTestimonials = Array<Pick<Testimonial, "_id" | "clientName" | "designation" | "testimonial" | "isVisible" | "createdAt" | "updatedAt" | "rating" | "reviewDate">>;
 
 export interface ITestimonialRepository {
 

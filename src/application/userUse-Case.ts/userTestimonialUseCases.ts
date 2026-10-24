@@ -11,7 +11,7 @@ export class UseGetTestimonialsUseCase {
 
     async execute(): Promise<ApiResponse<AdminFetchAllTestimonials>> {
         try {
-            const result = await this.testimonialRepositoryImpl.findVisibleTestimonials({ page: 1, limit: 10 });
+            const result = await this.testimonialRepositoryImpl.findVisibleTestimonials({ page: 1, limit: 100 });
  
             return {
                 success: true,

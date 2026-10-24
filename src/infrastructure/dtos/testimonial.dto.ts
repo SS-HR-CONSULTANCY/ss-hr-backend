@@ -4,8 +4,10 @@ import { ApiResponse } from "./common.dts";
 // Create Testimonial DTOs
 export interface CreateTestimonialRequest {
   clientName: string;
-  designation: string;
+  designation?: string;
   testimonial: string;
+  rating?: number;
+  reviewDate?: Date | string;
 }
 
 export interface CreateTestimonialResponse extends ApiResponse {
@@ -14,6 +16,8 @@ export interface CreateTestimonialResponse extends ApiResponse {
     clientName: string;
     designation: string;
     testimonial: string;
+    rating?: number;
+    reviewDate?: Date;
   };
 }
 
@@ -23,6 +27,8 @@ export interface UpdateTestimonialRequest {
   clientName?: string;
   designation?: string;
   testimonial?: string;
+  rating?: number;
+  reviewDate?: Date | string;
   isVisible?: boolean;
 }
 
@@ -32,6 +38,8 @@ export interface UpdateTestimonialResponse extends ApiResponse {
     clientName: string;
     designation: string;
     testimonial: string;
+    rating?: number;
+    reviewDate?: Date;
     isVisible: boolean;
   };
 }
@@ -47,6 +55,8 @@ export interface GetTestimonialByIdResponse extends ApiResponse {
     clientName: string;
     designation: string;
     testimonial: string;
+    rating?: number;
+    reviewDate?: Date;
     isVisible: boolean;
     createdAt: Date;
     updatedAt: Date;

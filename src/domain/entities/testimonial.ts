@@ -8,6 +8,8 @@ export class Testimonial {
     public testimonial: string,
     public isVisible: boolean,
     public createdAt: Date,
-    public updatedAt: Date
+    public updatedAt: Date,
+    public rating?: number,
+    public reviewDate?: Date
   ) {}
 }

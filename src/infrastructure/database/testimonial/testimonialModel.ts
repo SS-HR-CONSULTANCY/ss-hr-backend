@@ -1,11 +1,12 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
-import { REGEX_CLIENT_NAME, REGEX_TESTIMONIAL, REGEX_TEXT_DOT_AMP } from "../../zod/regex";
 
 export interface ITestimonial extends Document {
   _id: Types.ObjectId;
   clientName: string;
-  designation: string;
+  designation?: string;
   testimonial: string;
+  rating?: number;
+  reviewDate?: Date;
   isVisible: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -16,30 +17,36 @@ const TestimonialSchema = new Schema<ITestimonial>(
     clientName: {
       type: String,
       required: [true, "Client name is required"],
-      minlength: [2, "Client name must be at least 2 characters"],
+      minlength: [1, "Client name must be at least 1 character"],
       maxlength: [100, "Client name cannot exceed 100 characters"],
       trim: true,
-      match: [REGEX_CLIENT_NAME, "Client name can contain only letters and spaces"],
     },
-
-
 
     designation: {
       type: String,
-      required: [true, "Designation is required"],
-      minlength: [2, "Designation must be at least 2 characters"],
+      default: "Customer",
       maxlength: [100, "Designation cannot exceed 100 characters"],
       trim: true,
-      match: [REGEX_TEXT_DOT_AMP, "Designation can contain only letters and spaces"],
     },
 
     testimonial: {
       type: String,
-      required: [true, "Testimonial is required"],
-      minlength: [20, "Testimonial must be at least 20 characters"],
-      maxlength: [1000, "Testimonial cannot exceed 1000 characters"],
-      match: [REGEX_TESTIMONIAL, "Testimonial must be between 20 and 1000 characters"],
+      required: [true, "Review text is required"],
+      minlength: [1, "Review text must be at least 1 character"],
+      maxlength: [3000, "Review text cannot exceed 3000 characters"],
       trim: true,
+    },
+
+    rating: {
+      type: Number,
+      min: [1, "Rating must be at least 1"],
+      max: [5, "Rating cannot exceed 5"],
+      default: 5,
+    },
+
+    reviewDate: {
+      type: Date,
+      default: Date.now,
     },
 
     isVisible: {
