@@ -4,6 +4,7 @@ import { ApiResponse } from "./common.dts";
 // Create Testimonial DTOs
 export interface CreateTestimonialRequest {
   clientName: string;
+  clientPhoto?: string;
   designation?: string;
   testimonial: string;
   rating?: number;
@@ -14,6 +15,7 @@ export interface CreateTestimonialResponse extends ApiResponse {
   testimonial?: {
     _id: Types.ObjectId;
     clientName: string;
+    clientPhoto?: string;
     designation: string;
     testimonial: string;
     rating?: number;
@@ -25,6 +27,7 @@ export interface CreateTestimonialResponse extends ApiResponse {
 export interface UpdateTestimonialRequest {
   _id: Types.ObjectId;
   clientName?: string;
+  clientPhoto?: string;
   designation?: string;
   testimonial?: string;
   rating?: number;
@@ -36,6 +39,7 @@ export interface UpdateTestimonialResponse extends ApiResponse {
   testimonial?: {
     _id: Types.ObjectId;
     clientName: string;
+    clientPhoto?: string;
     designation: string;
     testimonial: string;
     rating?: number;
@@ -53,6 +57,7 @@ export interface GetTestimonialByIdResponse extends ApiResponse {
   testimonial?: {
     _id: Types.ObjectId;
     clientName: string;
+    clientPhoto?: string;
     designation: string;
     testimonial: string;
     rating?: number;

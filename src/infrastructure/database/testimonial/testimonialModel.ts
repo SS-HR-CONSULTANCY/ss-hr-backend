@@ -9,6 +9,7 @@ export interface ITestimonial extends Document {
   reviewDate?: Date;
   isVisible: boolean;
   googleReviewId?: string;
+  clientPhoto?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,9 +24,15 @@ const TestimonialSchema = new Schema<ITestimonial>(
       trim: true,
     },
 
+    clientPhoto: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     designation: {
       type: String,
-      default: "Customer",
+      default: "Client of SS HR Tours & Travels",
       maxlength: [100, "Designation cannot exceed 100 characters"],
       trim: true,
     },

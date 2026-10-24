@@ -21,10 +21,11 @@ export class CreateTestimonialUseCase {
 
   async execute(data: CreateTestimonialRequest): Promise<CreateTestimonialResponse> {
     try {
-      const { clientName, designation, testimonial, rating, reviewDate } = data;
+      const { clientName, clientPhoto, designation, testimonial, rating, reviewDate } = data;
 
       const createdTestimonial = await this.testimonialRepository.createTestimonial({
         clientName,
+        clientPhoto: clientPhoto || "",
         designation: designation || "Customer",
         testimonial,
         rating: typeof rating === "number" ? rating : 5,
@@ -40,6 +41,7 @@ export class CreateTestimonialUseCase {
         testimonial: {
           _id: createdTestimonial._id,
           clientName: createdTestimonial.clientName,
+          clientPhoto: createdTestimonial.clientPhoto,
           designation: createdTestimonial.designation,
           testimonial: createdTestimonial.testimonial,
           rating: createdTestimonial.rating,
@@ -59,12 +61,13 @@ export class UpdateTestimonialUseCase {
 
   async execute(data: UpdateTestimonialRequest): Promise<UpdateTestimonialResponse> {
     try {
-      const { _id, clientName, designation, isVisible, testimonial, rating, reviewDate } = data;
+      const { _id, clientName, clientPhoto, designation, isVisible, testimonial, rating, reviewDate } = data;
 
       const existingTestimonial = await this.testimonialRepository.findTestimonialById(_id);
       if (!existingTestimonial) throw new Error("Testimonial not found");
 
       existingTestimonial.clientName = clientName || existingTestimonial.clientName;
+      if (clientPhoto !== undefined) existingTestimonial.clientPhoto = clientPhoto;
       existingTestimonial.designation = designation || existingTestimonial.designation;
       existingTestimonial.isVisible = isVisible ?? existingTestimonial.isVisible;
       existingTestimonial.testimonial = testimonial || existingTestimonial.testimonial;
@@ -125,8 +128,11 @@ export class GetTestimonialByIdUseCase {
         testimonial: {
           _id: testimonial._id,
           clientName: testimonial.clientName,
+          clientPhoto: testimonial.clientPhoto,
           designation: testimonial.designation,
           testimonial: testimonial.testimonial,
+          rating: testimonial.rating,
+          reviewDate: testimonial.reviewDate,
           isVisible: testimonial.isVisible,
           createdAt: testimonial.createdAt,
           updatedAt: testimonial.updatedAt,

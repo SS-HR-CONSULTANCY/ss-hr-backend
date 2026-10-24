@@ -6,17 +6,23 @@ import { AdminFetchAllTestimonials, CreateTestimonial, ITestimonialRepository, U
 
 export class TestimonialRepositoryImpl implements ITestimonialRepository {
   private mapToEntity(testimonial: ITestimonial): Testimonial {
+    const rawDesig = testimonial.designation?.trim();
+    const designation =
+      !rawDesig || ["Customer", "Local Guide", "Google Reviewer"].includes(rawDesig)
+        ? "Client of SS HR Tours & Travels"
+        : rawDesig;
     return new Testimonial(
       testimonial._id,
       testimonial.clientName,
-      testimonial.designation || "Customer",
+      designation,
       testimonial.testimonial,
       testimonial.isVisible !== undefined ? testimonial.isVisible : true,
       testimonial.createdAt,
       testimonial.updatedAt,
       testimonial.rating || 5,
       testimonial.reviewDate || testimonial.createdAt,
-      testimonial.googleReviewId
+      testimonial.googleReviewId,
+      testimonial.clientPhoto
     );
   }
 
@@ -55,6 +61,7 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
             reviewDate: 1,
             isVisible: 1,
             googleReviewId: 1,
+            clientPhoto: 1,
             createdAt: 1,
             updatedAt: 1,
           }
@@ -135,6 +142,7 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
             reviewDate: 1,
             isVisible: 1,
             googleReviewId: 1,
+            clientPhoto: 1,
             createdAt: 1,
             updatedAt: 1,
           }
@@ -177,6 +185,9 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
           if (reviewData.designation) {
             existing.designation = reviewData.designation;
           }
+          if (reviewData.clientPhoto) {
+            existing.clientPhoto = reviewData.clientPhoto;
+          }
           await existing.save();
           return { isNew: false };
         }
@@ -190,12 +201,16 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
         if (reviewData.designation) {
           existing.designation = reviewData.designation;
         }
+        if (reviewData.clientPhoto) {
+          existing.clientPhoto = reviewData.clientPhoto;
+        }
         await existing.save();
         return { isNew: false };
       } else {
         await TestimonialModel.create({
           clientName: reviewData.clientName,
-          designation: reviewData.designation || "Google Reviewer",
+          clientPhoto: reviewData.clientPhoto || "",
+          designation: reviewData.designation || "Client of SS HR Tours & Travels",
           testimonial: reviewData.testimonial,
           rating: reviewData.rating,
           reviewDate: reviewData.reviewDate,
@@ -213,16 +228,16 @@ export class TestimonialRepositoryImpl implements ITestimonialRepository {
   private async seedDefaultReviews(): Promise<void> {
     try {
       const defaultReviews = [
-        { clientName: "Shafeek Sainudeen", designation: "Customer", testimonial: "Good Service ❤️", rating: 5, reviewDate: new Date("2026-10-20"), isVisible: true },
-        { clientName: "Mahesh Kv", designation: "Local Guide", testimonial: "Good service", rating: 5, reviewDate: new Date("2026-10-18"), isVisible: true },
-        { clientName: "Naser Hussain", designation: "Customer", testimonial: "Their service is best and price is affordable recommend for others", rating: 5, reviewDate: new Date("2026-10-15"), isVisible: true },
-        { clientName: "Ganga Vs", designation: "Customer", testimonial: "Friendly staff and good service", rating: 5, reviewDate: new Date("2026-10-12"), isVisible: true },
-        { clientName: "Dr.R.Naresh Kumar.", designation: "Local Guide", testimonial: "Got visa services with them . Recommended..", rating: 4, reviewDate: new Date("2026-10-10"), isVisible: true },
-        { clientName: "Martin S", designation: "Customer", testimonial: "100% honest HR Consultancy in the UAE.Very very genuine approach and real Gentleman.**********", rating: 5, reviewDate: new Date("2026-10-05"), isVisible: true },
-        { clientName: "Fathima sa", designation: "Customer", testimonial: "I had a great experience with SS HR Consultancy Tours and Travels. They were professional, honest, and supportive throughout the entire recruitment process. Their team guided me at every step and helped me secure a job in Dubai smoothly.", rating: 5, reviewDate: new Date("2026-10-01"), isVisible: true },
-        { clientName: "Vinod Pillai", designation: "Customer", testimonial: "SS HR consultancy വളരെ വിശ്വസിക്കാൻ പറ്റുന്ന ഒരു സ്ഥാപനമാണ്. മാനേജ്മെന്റും stafsum വളരെ ഫ്രണ്ട്ലി ആണ്. എന്റെ എക്സ്പീരിയൻസിൽ നിന്നു പറയുന്നതാണ് ദുബായിൽ ഒരു ജോലിക്കായി try ചെയ്യുന്നവർക്ക് ചൂസ് ചെയ്യാൻ പറ്റുന്ന വളരെ വിശ്വസ്തമായ ഒരു സ്ഥാപനമാണ് ss", rating: 5, reviewDate: new Date("2026-09-28"), isVisible: true },
-        { clientName: "Seetha Mohan", designation: "Customer", testimonial: "Excellent and trustworthy service! I always book my flight tickets and arrange my family's UAE visas through this agency. They are very responsive, professional, and always provide prompt assistance. Highly recommended. Thank you for your excellent service!", rating: 5, reviewDate: new Date("2026-09-20"), isVisible: true },
-        { clientName: "Bover Shook", designation: "Customer", testimonial: "The service provided was exceptionally professional, offering thorough information and effective solutions. I highly recommend.", rating: 5, reviewDate: new Date("2026-09-15"), isVisible: true },
+        { clientName: "Shafeek Sainudeen", designation: "Client of SS HR Tours & Travels", testimonial: "Good Service ❤️", rating: 5, reviewDate: new Date("2026-10-20"), isVisible: true },
+        { clientName: "Mahesh Kv", designation: "Client of SS HR Tours & Travels", testimonial: "Good service", rating: 5, reviewDate: new Date("2026-10-18"), isVisible: true },
+        { clientName: "Naser Hussain", designation: "Client of SS HR Tours & Travels", testimonial: "Their service is best and price is affordable recommend for others", rating: 5, reviewDate: new Date("2026-10-15"), isVisible: true },
+        { clientName: "Ganga Vs", designation: "Client of SS HR Tours & Travels", testimonial: "Friendly staff and good service", rating: 5, reviewDate: new Date("2026-10-12"), isVisible: true },
+        { clientName: "Dr.R.Naresh Kumar.", designation: "Client of SS HR Tours & Travels", testimonial: "Got visa services with them . Recommended..", rating: 4, reviewDate: new Date("2026-10-10"), isVisible: true },
+        { clientName: "Martin S", designation: "Client of SS HR Tours & Travels", testimonial: "100% honest HR Consultancy in the UAE.Very very genuine approach and real Gentleman.**********", rating: 5, reviewDate: new Date("2026-10-05"), isVisible: true },
+        { clientName: "Fathima sa", designation: "Client of SS HR Tours & Travels", testimonial: "I had a great experience with SS HR Consultancy Tours and Travels. They were professional, honest, and supportive throughout the entire recruitment process. Their team guided me at every step and helped me secure a job in Dubai smoothly.", rating: 5, reviewDate: new Date("2026-10-01"), isVisible: true },
+        { clientName: "Vinod Pillai", designation: "Client of SS HR Tours & Travels", testimonial: "SS HR consultancy വളരെ വിശ്വസിക്കാൻ പറ്റുന്ന ഒരു സ്ഥാപനമാണ്. മാനേജ്മെന്റും stafsum വളരെ ഫ്രണ്ട്ലി ആണ്. എന്റെ എക്സ്പീരിയൻസിൽ നിന്നു പറയുന്നതാണ് ദുബായിൽ ഒരു ജോലിക്കായി try ചെയ്യുന്നവർക്ക് ചൂസ് ചെയ്യാൻ പറ്റുന്ന വളരെ വിശ്വസ്തമായ ഒരു സ്ഥാപനമാണ് ss", rating: 5, reviewDate: new Date("2026-09-28"), isVisible: true },
+        { clientName: "Seetha Mohan", designation: "Client of SS HR Tours & Travels", testimonial: "Excellent and trustworthy service! I always book my flight tickets and arrange my family's UAE visas through this agency. They are very responsive, professional, and always provide prompt assistance. Highly recommended. Thank you for your excellent service!", rating: 5, reviewDate: new Date("2026-09-20"), isVisible: true },
+        { clientName: "Bover Shook", designation: "Client of SS HR Tours & Travels", testimonial: "The service provided was exceptionally professional, offering thorough information and effective solutions. I highly recommend.", rating: 5, reviewDate: new Date("2026-09-15"), isVisible: true },
       ];
       await TestimonialModel.insertMany(defaultReviews);
     } catch {

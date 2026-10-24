@@ -4,6 +4,7 @@ dotenv.config();
 export interface NormalizedGoogleReview {
   googleReviewId: string;
   clientName: string;
+  clientPhoto?: string;
   designation?: string;
   testimonial: string;
   rating: number;
@@ -97,11 +98,13 @@ export class OutscraperService {
 
       const rating = Math.min(5, Math.max(1, Number(r.rating) || 5));
       const reviewDate = r.iso_date ? new Date(r.iso_date) : new Date();
-      const designation = r.user?.local_guide ? "Local Guide" : "Customer";
+      const designation = "Client of SS HR Tours & Travels";
+      const clientPhoto = r.user?.thumbnail || "";
 
       normalizedReviews.push({
         googleReviewId,
         clientName,
+        clientPhoto,
         designation,
         testimonial,
         rating,
@@ -182,11 +185,13 @@ export class OutscraperService {
           reviewDate = new Date(review.review_timestamp * 1000);
         }
 
-        const designation = review.author_badge || "Google Reviewer";
+        const designation = "Client of SS HR Tours & Travels";
+        const clientPhoto = review.author_image || "";
 
         normalizedReviews.push({
           googleReviewId,
           clientName,
+          clientPhoto,
           designation,
           testimonial,
           rating,

@@ -2,11 +2,12 @@ import {Types} from "mongoose"
 import { Testimonial } from "../entities/testimonial"
 import {ApiPaginationRequest,ApiResponse} from "../../infrastructure/dtos/common.dts"
 
-export type CreateTestimonial = Partial<Pick<Testimonial, "clientName" | "designation" | "testimonial" | "rating" | "reviewDate">>;
-export type AdminFetchAllTestimonials = Array<Pick<Testimonial, "_id" | "clientName" | "designation" | "testimonial" | "isVisible" | "createdAt" | "updatedAt" | "rating" | "reviewDate" | "googleReviewId">>;
+export type CreateTestimonial = Partial<Pick<Testimonial, "clientName" | "clientPhoto" | "designation" | "testimonial" | "rating" | "reviewDate">>;
+export type AdminFetchAllTestimonials = Array<Pick<Testimonial, "_id" | "clientName" | "clientPhoto" | "designation" | "testimonial" | "isVisible" | "createdAt" | "updatedAt" | "rating" | "reviewDate" | "googleReviewId">>;
 
 export type UpsertGoogleReviewData = {
   clientName: string;
+  clientPhoto?: string;
   designation?: string;
   testimonial: string;
   rating: number;

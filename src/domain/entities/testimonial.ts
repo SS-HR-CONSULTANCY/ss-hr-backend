@@ -11,6 +11,7 @@ export class Testimonial {
     public updatedAt: Date,
     public rating?: number,
     public reviewDate?: Date,
-    public googleReviewId?: string
+    public googleReviewId?: string,
+    public clientPhoto?: string
   ) {}
 }

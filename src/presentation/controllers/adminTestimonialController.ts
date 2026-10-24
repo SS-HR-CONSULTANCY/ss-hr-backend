@@ -56,11 +56,12 @@ export class AdminTestimonialController {
 
     async updateTestimonial(req: Request, res: Response) {
         try {
-            const { clientName, designation, isVisible, testimonial, rating, reviewDate } = req.body;
+            const { clientName, clientPhoto, designation, isVisible, testimonial, rating, reviewDate } = req.body;
             const testimonialId = new Types.ObjectId(req.params.id);
             const result = await this.updateTestimonialUseCase.execute({
                 _id: testimonialId,
                 clientName,
+                clientPhoto,
                 designation,
                 isVisible,
                 testimonial,
