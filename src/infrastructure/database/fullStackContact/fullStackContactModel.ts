@@ -8,6 +8,15 @@ export interface IFSSActivity {
   by?: string;
 }
 
+export interface IWebsiteAudit {
+  overallHealth?: string;
+  issues?: string[];
+  report?: string;
+  actionItems?: string;
+  auditedBy?: string;
+  auditedAt?: Date;
+}
+
 export interface IFullStackContact extends Document {
   name: string;
   phone: string;
@@ -18,6 +27,8 @@ export interface IFullStackContact extends Document {
   city?: string;
   budget?: string;
   projectDescription?: string;
+  website?: string;
+  websiteAudit?: IWebsiteAudit;
   status: 'Pending' | 'Contacted' | 'Need Follow Up' | 'In Discussion' | 'Quotation Sent' | 'Converted' | 'Completed' | 'Lost';
   comment?: string;
   scheduledDate?: Date;
@@ -39,6 +50,18 @@ const FSSActivitySchema = new Schema<IFSSActivity>(
   { _id: false }
 );
 
+const WebsiteAuditSchema = new Schema<IWebsiteAudit>(
+  {
+    overallHealth: { type: String, default: 'Needs Improvement' },
+    issues: { type: [String], default: [] },
+    report: { type: String, default: '' },
+    actionItems: { type: String, default: '' },
+    auditedBy: { type: String, default: '' },
+    auditedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const FullStackContactSchema = new Schema<IFullStackContact>(
   {
     name: { type: String, required: true, trim: true },
@@ -54,6 +77,8 @@ const FullStackContactSchema = new Schema<IFullStackContact>(
     city: { type: String, trim: true, default: '' },
     budget: { type: String, trim: true, default: '' },
     projectDescription: { type: String, trim: true, default: '' },
+    website: { type: String, trim: true, default: '' },
+    websiteAudit: { type: WebsiteAuditSchema, default: null },
     status: {
       type: String,
       enum: ['Pending', 'Contacted', 'Need Follow Up', 'In Discussion', 'Quotation Sent', 'Converted', 'Completed', 'Lost'],
