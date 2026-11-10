@@ -547,6 +547,63 @@ adminFullStackContactRouter.post("/format-audit-report", async (req: Request, re
   }
 });
 
+// POST /summarize-comment - Summarize telesales call notes or WhatsApp chat with a business client (B2B Full Stack Solutions)
+adminFullStackContactRouter.post("/summarize-comment", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rawContent = typeof req.body?.content === "string" ? req.body.content.trim() : "";
+    const companyName = typeof req.body?.companyName === "string" ? req.body.companyName.trim() : "";
+    const website = typeof req.body?.website === "string" ? req.body.website.trim() : "";
+
+    if (!rawContent) {
+      res.status(400).json({ success: false, message: "Content is required for summarization" });
+      return;
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ success: false, message: "OPENAI_API_KEY is not configured" });
+      return;
+    }
+
+    const systemPrompt =
+      'You are an expert telesales AI assistant for "Full Stack Solutions" (a modern software development and web design agency). The telesales executive contacts business clients (companies, NOT job candidates). The executive will paste rough notes, call remarks, or a WhatsApp chat with a client company.\n\nSummarize the conversation into a concise, professional telesales note (1 to 3 short sentences or clean bullet points).\nHighlight:\n• Client company website/digital presence status (e.g. has no website, outdated website, wants redesign)\n• Services/business requirements discussed (e.g. web development, mobile app, CRM, SEO, eCommerce)\n• Client interest level, budget, or feedback (e.g. asked for quotation, pricing discussed, requested callback)\n• Agreed next steps / follow-up action\n\nStrict Rules:\n- This is a B2B sales client, NEVER treat them as a candidate, job seeker, or applicant.\n- Never use markdown heading hashes (\'#\', \'##\', \'###\').\n- Output ONLY the summary text directly without any prefix, quotes, or conversational fluff.';
+
+    const userPrompt = `Client / Company: ${companyName || "N/A"}\nWebsite: ${website || "N/A"}\n\nCall Notes / Chat:\n${rawContent}`;
+
+    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        temperature: 0.3,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 300,
+      }),
+    });
+
+    if (!aiRes.ok) {
+      const errText = await aiRes.text();
+      console.error("OpenAI FSS summarize-comment error:", errText);
+      res.status(502).json({ success: false, message: "AI summarization failed. Please try again." });
+      return;
+    }
+
+    const aiJson: any = await aiRes.json();
+    let summary = String(aiJson?.choices?.[0]?.message?.content || "").trim();
+    summary = summary.replace(/^#{1,6}\s*/gm, "").trim();
+
+    res.status(200).json({
+      success: true,
+      data: { summary: summary || rawContent },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /bulk - Create many contacts at once (skips rows without phone and existing phone numbers)
 adminFullStackContactRouter.post("/bulk", async (req: Request, res: Response, next: NextFunction) => {
   try {
