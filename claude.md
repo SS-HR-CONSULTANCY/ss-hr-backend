@@ -2,6 +2,10 @@
 
 Welcome to the backend service for **SS Human Resource Consultancy** and **Full Stack Solutions**. This document serves as a persistent guide for AI assistants (such as Claude) and developers working on this codebase.
 
+> [!IMPORTANT]
+> **Git Operations Policy**:
+> Do NOT execute Git commands (`git add`, `git commit`, `git push`, `git checkout`, etc.). The repository owner manually handles all Git staging, commits, branches, and pushes. AI assistants must focus solely on reading, modifying, verifying, building, and testing code, leaving all Git operations entirely to the user.
+
 ---
 
 ## 1. Project Overview & Role
@@ -111,3 +115,4 @@ Run all commands from within the `ss-hr-BE/` directory:
 ### C. Authentication & Middleware
 - Protect admin routes with `authMiddleware` and verify user identity from `req.user`.
 - Store sensitive secrets strictly in `.env` (never commit `.env` to Git).
+
