@@ -152,9 +152,13 @@ export const importedCustomerController = {
       const state = req.query.state as string;
       const listQuery: any = { ...query };
       if (status && status !== 'all') {
-        listQuery.status = status === 'Pending'
-          ? { $in: ['Pending', null, ''] }
-          : status;
+        if (status === 'Pending') {
+          listQuery.status = { $in: ['Pending', null, ''] };
+        } else if (status === 'Re-contacted' || status === 'Recontacted') {
+          listQuery.status = { $in: ['Re-contacted', 'Recontacted'] };
+        } else {
+          listQuery.status = status;
+        }
       }
       if (state && state !== 'all') {
         const escapedState = state.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
