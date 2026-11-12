@@ -553,6 +553,8 @@ adminFullStackContactRouter.post("/summarize-comment", async (req: Request, res:
     const rawContent = typeof req.body?.content === "string" ? req.body.content.trim() : "";
     const companyName = typeof req.body?.companyName === "string" ? req.body.companyName.trim() : "";
     const website = typeof req.body?.website === "string" ? req.body.website.trim() : "";
+    const status = typeof req.body?.status === "string" ? req.body.status.trim() : "";
+    const scheduledDate = typeof req.body?.scheduledDate === "string" ? req.body.scheduledDate.trim() : "";
 
     if (!rawContent) {
       res.status(400).json({ success: false, message: "Content is required for summarization" });
@@ -566,9 +568,9 @@ adminFullStackContactRouter.post("/summarize-comment", async (req: Request, res:
     }
 
     const systemPrompt =
-      'You are an expert telesales AI assistant for "Full Stack Solutions" (a modern software development and web design agency). The telesales executive contacts business clients (companies, NOT job candidates). The executive will paste rough notes, call remarks, or a WhatsApp chat with a client company.\n\nSummarize the conversation into a concise, professional telesales note (1 to 3 short sentences or clean bullet points).\nHighlight:\n• Client company website/digital presence status (e.g. has no website, outdated website, wants redesign)\n• Services/business requirements discussed (e.g. web development, mobile app, CRM, SEO, eCommerce)\n• Client interest level, budget, or feedback (e.g. asked for quotation, pricing discussed, requested callback)\n• Agreed next steps / follow-up action\n\nStrict Rules:\n- This is a B2B sales client, NEVER treat them as a candidate, job seeker, or applicant.\n- Never use markdown heading hashes (\'#\', \'##\', \'###\').\n- Output ONLY the summary text directly without any prefix, quotes, or conversational fluff.';
+      'You are an expert telesales CRM assistant for "Full Stack Solutions" (a modern software development and web design agency). You summarize telesales call remarks or WhatsApp chats with business clients (companies, NOT job candidates).\n\nSummarize the conversation into a concise, professional CRM activity note (1 to 2 short sentences or clean lines).\nKey Rules:\n1. Having NO website or an outdated website is a PRIME BUSINESS OPPORTUNITY to pitch web development and digital services. Frame it positively as a sales opportunity.\n2. If the lead status is "Need Follow Up" or has a scheduled date, state the requirement/pitch opportunity and mention the scheduled follow-up.\n3. ONLY if the lead status is "Lost" or "Not Interested" (and the client explicitly refused/rejected), state that the lead is closed/lost with no follow-up needed.\n4. Output ONLY the clean note text without quotes or conversational fluff.';
 
-    const userPrompt = `Client / Company: ${companyName || "N/A"}\nWebsite: ${website || "N/A"}\n\nCall Notes / Chat:\n${rawContent}`;
+    const userPrompt = `Client / Company: ${companyName || "N/A"}\nWebsite: ${website || "N/A"}\nLead Status: ${status || "N/A"}\nScheduled Follow-up: ${scheduledDate || "None"}\n\nCall Notes / Remarks:\n${rawContent}`;
 
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
