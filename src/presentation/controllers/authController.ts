@@ -26,6 +26,8 @@ import { AddressRepositoryImpl } from "../../infrastructure/database/address/add
 import { SignedUrlRepositoryImpl } from "../../infrastructure/database/signedUrl/signedUrlRepositoryImpl";
 import { CareerDataRepositoryImpl } from "../../infrastructure/database/careerData/careerDataRepositoryImpl";
 import { JWTService } from "../../infrastructure/security/jwt";
+import { SystemUserModel } from "../../infrastructure/database/systemUser/systemUserModel";
+import { StaffAuthLogModel } from "../../infrastructure/database/systemUser/staffAuthLogModel";
 
 const userRepositoryImpl = new UserRepositoryImpl();
 const addressRepositoryImpl = new AddressRepositoryImpl();
@@ -132,6 +134,39 @@ export class AuthController {
         role,
       });
 
+      if ((role === "staff" || role === "admin") && user && (user as any)._id) {
+        try {
+          const now = new Date();
+          const ipAddress =
+            (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+            req.socket?.remoteAddress ||
+            req.ip ||
+            "";
+          const userAgent = (req.headers["user-agent"] as string) || "";
+          const staffUserId = (user as any)._id;
+          const staffUsername = (user as any).email || username || "";
+          const staffFullName = user.fullName || staffUsername;
+          const staffRole = (user.role as "admin" | "staff") || "staff";
+
+          await Promise.all([
+            SystemUserModel.findByIdAndUpdate(staffUserId, {
+              $set: { lastLoginAt: now, isOnline: true },
+            }),
+            StaffAuthLogModel.create({
+              userId: Types.ObjectId.isValid(staffUserId) ? new Types.ObjectId(staffUserId) : null,
+              username: staffUsername,
+              fullName: staffFullName,
+              role: staffRole,
+              action: "LOGIN",
+              ipAddress,
+              userAgent,
+            }),
+          ]);
+        } catch (logErr) {
+          console.error("Failed to record staff login log:", logErr);
+        }
+      }
+
       res.cookie("token", token, {
         httpOnly: true,
         secure: isProduction,
@@ -157,6 +192,77 @@ export class AuthController {
   async logout(req: Request, res: Response) {
     try {
       const isProduction = process.env.NODE_ENV === "production";
+
+      // Record staff/system user logout before clearing token
+      try {
+        const authHeader = req.headers.authorization;
+        const token =
+          req.cookies?.["token"] ||
+          (authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null);
+
+        let decoded: any = null;
+        if (token) {
+          try {
+            decoded = JWTService.verifyToken(token);
+          } catch {
+            // Ignore expired/invalid token error and fall back to body if provided
+          }
+        }
+
+        const userId = decoded?.userId || req.body?.userId;
+        const username = decoded?.email || req.body?.username || req.body?.email;
+
+        if ((userId || username) && username !== "tony") {
+          let systemUser = null;
+          if (userId && Types.ObjectId.isValid(userId)) {
+            systemUser = await SystemUserModel.findById(userId);
+          }
+          if (!systemUser && username) {
+            systemUser = await SystemUserModel.findOne({ username });
+          }
+
+          if (systemUser) {
+            const now = new Date();
+            const ipAddress =
+              (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+              req.socket?.remoteAddress ||
+              req.ip ||
+              "";
+            const userAgent = (req.headers["user-agent"] as string) || "";
+
+            let sessionDurationMs: number | null = null;
+            if (
+              systemUser.lastLoginAt &&
+              (!systemUser.lastLogoutAt ||
+                new Date(systemUser.lastLoginAt) > new Date(systemUser.lastLogoutAt))
+            ) {
+              sessionDurationMs = Math.max(
+                0,
+                now.getTime() - new Date(systemUser.lastLoginAt).getTime()
+              );
+            }
+
+            await Promise.all([
+              SystemUserModel.findByIdAndUpdate(systemUser._id, {
+                $set: { lastLogoutAt: now, isOnline: false },
+              }),
+              StaffAuthLogModel.create({
+                userId: systemUser._id,
+                username: systemUser.username,
+                fullName: systemUser.fullName,
+                role: systemUser.role,
+                action: "LOGOUT",
+                ipAddress,
+                userAgent,
+                sessionDurationMs,
+              }),
+            ]);
+          }
+        }
+      } catch (logErr) {
+        console.error("Failed to record staff logout log:", logErr);
+      }
+
       res.clearCookie("token", {
         httpOnly: true,
         secure: isProduction,

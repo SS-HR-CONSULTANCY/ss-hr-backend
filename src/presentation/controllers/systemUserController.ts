@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { SystemUserModel } from "../../infrastructure/database/systemUser/systemUserModel";
+import { StaffAuthLogModel } from "../../infrastructure/database/systemUser/staffAuthLogModel";
 
 export const systemUserController = {
   getUsers: async (req: Request, res: Response) => {
@@ -95,6 +97,134 @@ export const systemUserController = {
       res.status(200).json({ success: true, message: "User deleted successfully" });
     } catch (error: any) {
       console.error("Error deleting system user:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  getAuthLogs: async (req: Request, res: Response) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
+      const skip = (page - 1) * limit;
+
+      const userId = (req.query.userId as string) || "all";
+      const action = (req.query.action as string) || "all";
+      const date = (req.query.date as string) || "";
+
+      const query: any = {};
+
+      if (userId && userId !== "all") {
+        if (mongoose.Types.ObjectId.isValid(userId)) {
+          query.userId = new mongoose.Types.ObjectId(userId);
+        } else {
+          query.username = userId;
+        }
+      }
+
+      if (action && (action === "LOGIN" || action === "LOGOUT")) {
+        query.action = action;
+      }
+
+      if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [year, month, day] = date.split("-").map(Number);
+        // IST day boundaries (UTC+5:30)
+        const istStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - 5.5 * 60 * 60 * 1000);
+        const istEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - 5.5 * 60 * 60 * 1000);
+        query.createdAt = { $gte: istStart, $lte: istEnd };
+      }
+
+      // Compute IST start/end of today for today's login counts
+      const now = new Date();
+      const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+      const todayYear = istNow.getUTCFullYear();
+      const todayMonth = istNow.getUTCMonth();
+      const todayDay = istNow.getUTCDate();
+      const todayStart = new Date(Date.UTC(todayYear, todayMonth, todayDay, 0, 0, 0, 0) - 5.5 * 60 * 60 * 1000);
+      const todayEnd = new Date(Date.UTC(todayYear, todayMonth, todayDay, 23, 59, 59, 999) - 5.5 * 60 * 60 * 1000);
+
+      const [logs, total, allUsers, todayLoginAgg, totalLoginAgg] = await Promise.all([
+        StaffAuthLogModel.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        StaffAuthLogModel.countDocuments(query),
+        SystemUserModel.find({}).select("-password").lean(),
+        StaffAuthLogModel.aggregate([
+          {
+            $match: {
+              action: "LOGIN",
+              createdAt: { $gte: todayStart, $lte: todayEnd },
+            },
+          },
+          {
+            $group: {
+              _id: "$userId",
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        StaffAuthLogModel.aggregate([
+          {
+            $match: { action: "LOGIN" },
+          },
+          {
+            $group: {
+              _id: "$userId",
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+      ]);
+
+      const todayCountMap = new Map<string, number>();
+      todayLoginAgg.forEach((row: any) => {
+        if (row._id) todayCountMap.set(String(row._id), row.count || 0);
+      });
+
+      const totalCountMap = new Map<string, number>();
+      totalLoginAgg.forEach((row: any) => {
+        if (row._id) totalCountMap.set(String(row._id), row.count || 0);
+      });
+
+      const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+      const staffSummary = allUsers.map((u: any) => {
+        const uid = String(u._id);
+        const lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt) : null;
+        const lastLogout = u.lastLogoutAt ? new Date(u.lastLogoutAt) : null;
+        const isOnline = Boolean(
+          u.isOnline &&
+            lastLogin &&
+            now.getTime() - lastLogin.getTime() < twoDaysMs &&
+            (!lastLogout || lastLogin > lastLogout)
+        );
+
+        return {
+          _id: uid,
+          username: u.username,
+          fullName: u.fullName,
+          role: u.role,
+          isActive: u.isActive,
+          lastLoginAt: u.lastLoginAt || null,
+          lastLogoutAt: u.lastLogoutAt || null,
+          isOnline,
+          todayLoginCount: todayCountMap.get(uid) || 0,
+          totalLoginCount: totalCountMap.get(uid) || 0,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          logs,
+          total,
+          page,
+          totalPages: Math.ceil(total / limit) || 1,
+          staffSummary,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error getting staff auth logs:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   },
