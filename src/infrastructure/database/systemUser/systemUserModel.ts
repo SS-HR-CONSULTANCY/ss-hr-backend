@@ -7,6 +7,9 @@ export interface ISystemUser extends Document {
   role: 'admin' | 'staff';
   permissions: string[];
   isActive: boolean;
+  lastLoginAt?: Date | null;
+  lastLogoutAt?: Date | null;
+  isOnline?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +22,9 @@ const SystemUserSchema: Schema = new Schema(
     role: { type: String, enum: ['admin', 'staff'], required: true },
     permissions: [{ type: String }],
     isActive: { type: Boolean, default: true },
+    lastLoginAt: { type: Date, default: null },
+    lastLogoutAt: { type: Date, default: null },
+    isOnline: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
