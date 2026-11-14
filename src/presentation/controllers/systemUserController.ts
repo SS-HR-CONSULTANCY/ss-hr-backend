@@ -1,18 +1,14 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { SystemUserModel, computeIsOnline } from "../../infrastructure/database/systemUser/systemUserModel";
+import {
+  SystemUserModel,
+  computeIsOnline,
+  getCompletedMsForDay,
+  getIstDayStart,
+  hasOpenSession,
+} from "../../infrastructure/database/systemUser/systemUserModel";
 import { StaffAuthLogModel } from "../../infrastructure/database/systemUser/staffAuthLogModel";
-
-const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-
-// Midnight (IST) of the day containing `date`, as a UTC Date.
-const getIstDayStart = (date: Date): Date => {
-  const ist = new Date(date.getTime() + IST_OFFSET_MS);
-  return new Date(
-    Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - IST_OFFSET_MS
-  );
-};
 
 export const systemUserController = {
   // Called periodically by the logged-in admin/staff dashboard to mark the user as online.
@@ -32,30 +28,14 @@ export const systemUserController = {
         { new: true }
       ).lean();
 
-      const todayStart = getIstDayStart(now);
+      // Time from today's earlier sessions (kept on the user record by login/logout).
+      const todayCompletedMs = user ? getCompletedMsForDay(user, now) : 0;
 
-      // Finished sessions today (only the part that falls on today counts).
-      const todayLogouts = await StaffAuthLogModel.find({
-        userId: new mongoose.Types.ObjectId(userId),
-        action: "LOGOUT",
-        createdAt: { $gte: todayStart, $lte: now },
-      })
-        .select("sessionDurationMs createdAt")
-        .lean();
-
-      const todayCompletedMs = todayLogouts.reduce((sum, log: any) => {
-        const duration = Math.max(0, Number(log.sessionDurationMs) || 0);
-        const sinceMidnight = new Date(log.createdAt).getTime() - todayStart.getTime();
-        return sum + Math.min(duration, Math.max(0, sinceMidnight));
-      }, 0);
-
-      // Current open session (logged in and not yet logged out), clipped to today.
+      // Current open session, clipped to today.
       let currentSessionStart: Date | null = null;
-      if (
-        user?.lastLoginAt &&
-        (!user.lastLogoutAt || new Date(user.lastLoginAt) > new Date(user.lastLogoutAt))
-      ) {
-        const loginAt = new Date(user.lastLoginAt);
+      if (user && hasOpenSession(user)) {
+        const todayStart = getIstDayStart(now);
+        const loginAt = new Date(user.lastLoginAt as Date);
         currentSessionStart = loginAt > todayStart ? loginAt : todayStart;
       }
 
