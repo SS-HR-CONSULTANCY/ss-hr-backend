@@ -26,7 +26,7 @@ import { AddressRepositoryImpl } from "../../infrastructure/database/address/add
 import { SignedUrlRepositoryImpl } from "../../infrastructure/database/signedUrl/signedUrlRepositoryImpl";
 import { CareerDataRepositoryImpl } from "../../infrastructure/database/careerData/careerDataRepositoryImpl";
 import { JWTService } from "../../infrastructure/security/jwt";
-import { SystemUserModel, closeSessionUpdate } from "../../infrastructure/database/systemUser/systemUserModel";
+import { SystemUserModel, accrueActiveTime } from "../../infrastructure/database/systemUser/systemUserModel";
 import { StaffAuthLogModel } from "../../infrastructure/database/systemUser/staffAuthLogModel";
 
 const userRepositoryImpl = new UserRepositoryImpl();
@@ -148,23 +148,15 @@ export class AuthController {
           const staffFullName = user.fullName || staffUsername;
           const staffRole = (user.role as "admin" | "staff") || "staff";
 
-          // If the previous session was never logged out (browser closed, token expired,
-          // login from another device), bank its time up to the last heartbeat so the
-          // day's timer keeps counting from where it was.
+          // Bank any active time not yet counted (e.g. re-login from another tab).
           const prevUser = await SystemUserModel.findById(staffUserId)
-            .select("lastLoginAt lastLogoutAt lastSeenAt workDate workCompletedMs")
+            .select("isOnline lastSeenAt workDate workCompletedMs")
             .lean();
-          let carriedOver = null;
-          if (prevUser?.lastLoginAt) {
-            const loginAt = new Date(prevUser.lastLoginAt);
-            const seenAt = prevUser.lastSeenAt ? new Date(prevUser.lastSeenAt) : null;
-            const endAt = seenAt && seenAt > loginAt ? (seenAt < now ? seenAt : now) : loginAt;
-            carriedOver = closeSessionUpdate(prevUser, endAt);
-          }
+          const accrued = prevUser ? accrueActiveTime(prevUser, now) : null;
 
           await Promise.all([
             SystemUserModel.findByIdAndUpdate(staffUserId, {
-              $set: { lastLoginAt: now, lastSeenAt: now, isOnline: true, ...(carriedOver || {}) },
+              $set: { lastLoginAt: now, lastSeenAt: now, isOnline: true, ...(accrued || {}) },
             }),
             StaffAuthLogModel.create({
               userId: Types.ObjectId.isValid(staffUserId) ? new Types.ObjectId(staffUserId) : null,
@@ -258,7 +250,7 @@ export class AuthController {
 
             await Promise.all([
               SystemUserModel.findByIdAndUpdate(systemUser._id, {
-                $set: { lastLogoutAt: now, isOnline: false, ...(closeSessionUpdate(systemUser, now) || {}) },
+                $set: { lastLogoutAt: now, lastSeenAt: now, isOnline: false, ...accrueActiveTime(systemUser, now) },
               }),
               StaffAuthLogModel.create({
                 userId: systemUser._id,

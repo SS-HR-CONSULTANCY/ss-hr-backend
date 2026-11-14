@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import {
   SystemUserModel,
   computeIsOnline,
-  getCompletedMsForDay,
+  accrueActiveTime,
   getIstDayStart,
   hasOpenSession,
   getTodayWorkMs,
@@ -24,22 +24,33 @@ export const systemUserController = {
         return;
       }
 
-      const user = await SystemUserModel.findByIdAndUpdate(
-        userId,
-        { $set: { lastSeenAt: now, isOnline: true } },
-        { new: true }
-      ).lean();
-
-      // Time from today's earlier sessions (kept on the user record by login/logout).
-      const todayCompletedMs = user ? getCompletedMsForDay(user, now) : 0;
-
-      // Current open session, clipped to today.
-      let currentSessionStart: Date | null = null;
-      if (user && hasOpenSession(user)) {
-        const todayStart = getIstDayStart(now);
-        const loginAt = new Date(user.lastLoginAt as Date);
-        currentSessionStart = loginAt > todayStart ? loginAt : todayStart;
+      const prev: any = await SystemUserModel.findById(userId)
+        .select("isOnline lastSeenAt workDate workCompletedMs")
+        .lean();
+      if (!prev) {
+        res.status(200).json({ success: true, data: { todayCompletedMs: 0, currentSessionStart: null, serverNow: now } });
+        return;
       }
+
+      // Add the time since the previous heartbeat to today's total. The lastSeenAt match makes
+      // this a compare-and-set, so two tabs pinging at once can't count the same gap twice.
+      const accrued = accrueActiveTime(prev, now);
+      const result = await SystemUserModel.updateOne(
+        { _id: userId, lastSeenAt: prev.lastSeenAt ?? null },
+        { $set: { lastSeenAt: now, isOnline: true, ...accrued } }
+      );
+
+      let todayCompletedMs = accrued.workCompletedMs;
+      if (result.matchedCount === 0) {
+        // Another heartbeat won the race; it already counted this time.
+        const latest: any = await SystemUserModel.findById(userId)
+          .select("workDate workCompletedMs")
+          .lean();
+        todayCompletedMs = latest?.workDate === accrued.workDate ? latest.workCompletedMs || 0 : 0;
+      }
+
+      // The client keeps counting from now until the next heartbeat.
+      const currentSessionStart = now;
 
       res.status(200).json({
         success: true,
