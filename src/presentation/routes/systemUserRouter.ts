@@ -5,6 +5,7 @@ const router = Router();
 
 router.get('/', systemUserController.getUsers);
 router.get('/auth-logs', systemUserController.getAuthLogs);
+router.get('/:id/session-history', systemUserController.getSessionHistory);
 router.post('/', systemUserController.createUser);
 router.patch('/:id', systemUserController.updateUser);
 router.delete('/:id', systemUserController.deleteUser);

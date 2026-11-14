@@ -137,12 +137,17 @@ adminFullStackContactRouter.post("/", async (req: Request, res: Response, next: 
       assignedTo,
     } = req.body;
 
-    if (!name || !name.trim()) {
-      res.status(400).json({ success: false, message: "Contact name is required" });
+    // The add form collects a company name; it doubles as the contact's display name.
+    const contactName =
+      (typeof name === "string" && name.trim()) ||
+      (typeof companyName === "string" && companyName.trim()) ||
+      "";
+    if (!contactName) {
+      res.status(400).json({ success: false, message: "Company name is required" });
       return;
     }
     if (!phone || !phone.trim()) {
-      res.status(400).json({ success: false, message: "Phone number is required" });
+      res.status(400).json({ success: false, message: "Contact number is required" });
       return;
     }
 
@@ -169,7 +174,7 @@ adminFullStackContactRouter.post("/", async (req: Request, res: Response, next: 
     }
 
     const contact = new FullStackContactModel({
-      name: name.trim(),
+      name: contactName,
       phone: phone.trim(),
       email: email ? email.trim() : "",
       companyName: companyName ? companyName.trim() : "",
