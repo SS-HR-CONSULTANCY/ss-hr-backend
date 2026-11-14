@@ -81,45 +81,45 @@ export const hasOpenSession = (u: SessionFields): boolean =>
 export const getCompletedMsForDay = (u: SessionFields, now: Date): number =>
   u.workDate === getIstDateKey(now) ? Math.max(0, Number(u.workCompletedMs) || 0) : 0;
 
-/**
- * Closes the user's open session at `endAt` and adds its time (the part on endAt's IST day)
- * to that day's total. Returns the fields to $set, or null if there is no open session.
- */
-export const closeSessionUpdate = (
-  u: SessionFields,
-  endAt: Date
-): { workDate: string; workCompletedMs: number } | null => {
-  if (!hasOpenSession(u)) return null;
-  const dayStart = getIstDayStart(endAt);
-  const loginAt = new Date(u.lastLoginAt as Date);
-  const start = loginAt > dayStart ? loginAt : dayStart;
-  const durationMs = Math.max(0, endAt.getTime() - start.getTime());
-  return {
-    workDate: getIstDateKey(endAt),
-    workCompletedMs: getCompletedMsForDay(u, endAt) + durationMs,
-  };
+type PresenceFields = SessionFields & {
+  isOnline?: boolean;
+  lastSeenAt?: Date | string | null;
 };
 
 /**
- * Total logged-in time for today (IST). An open session counts up to `now` while the user
- * is online; if they went offline without logging out, it counts only up to their last heartbeat.
+ * Active time is counted from heartbeats: each heartbeat adds the time since the previous one,
+ * as long as the user was online and the gap is within PRESENCE_TIMEOUT_MS. Closing the browser
+ * (no heartbeats) stops the clock; logging in/out does not need to be recorded correctly.
+ * Returns the fields to $set for today's running total.
  */
-export const getTodayWorkMs = (
-  u: SessionFields & { lastSeenAt?: Date | string | null },
-  now: Date,
-  isOnline: boolean
-): number => {
-  let total = getCompletedMsForDay(u, now);
-  if (hasOpenSession(u)) {
-    const dayStart = getIstDayStart(now);
-    const loginAt = new Date(u.lastLoginAt as Date);
-    const start = loginAt > dayStart ? loginAt : dayStart;
-    let end = now;
-    if (!isOnline) {
-      const seenAt = u.lastSeenAt ? new Date(u.lastSeenAt) : loginAt;
-      end = seenAt < now ? seenAt : now;
+export const accrueActiveTime = (
+  u: PresenceFields,
+  now: Date
+): { workDate: string; workCompletedMs: number } => {
+  let added = 0;
+  if (u.isOnline && u.lastSeenAt) {
+    const seenAt = new Date(u.lastSeenAt);
+    const gap = now.getTime() - seenAt.getTime();
+    if (gap > 0 && gap <= PRESENCE_TIMEOUT_MS) {
+      const dayStart = getIstDayStart(now);
+      const from = seenAt > dayStart ? seenAt : dayStart;
+      added = Math.max(0, now.getTime() - from.getTime());
     }
-    total += Math.max(0, end.getTime() - start.getTime());
+  }
+  return {
+    workDate: getIstDateKey(now),
+    workCompletedMs: getCompletedMsForDay(u, now) + added,
+  };
+};
+
+/** Total active time today (IST), including the not-yet-recorded time since the last heartbeat. */
+export const getTodayWorkMs = (u: PresenceFields, now: Date, isOnline: boolean): number => {
+  let total = getCompletedMsForDay(u, now);
+  if (isOnline && u.lastSeenAt) {
+    const dayStart = getIstDayStart(now);
+    const seenAt = new Date(u.lastSeenAt);
+    const from = seenAt > dayStart ? seenAt : dayStart;
+    total += Math.min(PRESENCE_TIMEOUT_MS, Math.max(0, now.getTime() - from.getTime()));
   }
   return total;
 };
