@@ -150,7 +150,7 @@ export class AuthController {
 
           await Promise.all([
             SystemUserModel.findByIdAndUpdate(staffUserId, {
-              $set: { lastLoginAt: now, isOnline: true },
+              $set: { lastLoginAt: now, lastSeenAt: now, isOnline: true },
             }),
             StaffAuthLogModel.create({
               userId: Types.ObjectId.isValid(staffUserId) ? new Types.ObjectId(staffUserId) : null,

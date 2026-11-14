@@ -1,14 +1,80 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { SystemUserModel } from "../../infrastructure/database/systemUser/systemUserModel";
+import { SystemUserModel, computeIsOnline } from "../../infrastructure/database/systemUser/systemUserModel";
 import { StaffAuthLogModel } from "../../infrastructure/database/systemUser/staffAuthLogModel";
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+// Midnight (IST) of the day containing `date`, as a UTC Date.
+const getIstDayStart = (date: Date): Date => {
+  const ist = new Date(date.getTime() + IST_OFFSET_MS);
+  return new Date(
+    Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - IST_OFFSET_MS
+  );
+};
+
 export const systemUserController = {
+  // Called periodically by the logged-in admin/staff dashboard to mark the user as online.
+  // Also returns today's logged-in time so the dashboard can show a running timer.
+  heartbeat: async (req: Request, res: Response) => {
+    try {
+      const { userId, role } = req.user || ({} as any);
+      const now = new Date();
+      if (!(role === "admin" || role === "staff") || !userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(200).json({ success: true, data: { todayCompletedMs: 0, currentSessionStart: null, serverNow: now } });
+        return;
+      }
+
+      const user = await SystemUserModel.findByIdAndUpdate(
+        userId,
+        { $set: { lastSeenAt: now, isOnline: true } },
+        { new: true }
+      ).lean();
+
+      const todayStart = getIstDayStart(now);
+
+      // Finished sessions today (only the part that falls on today counts).
+      const todayLogouts = await StaffAuthLogModel.find({
+        userId: new mongoose.Types.ObjectId(userId),
+        action: "LOGOUT",
+        createdAt: { $gte: todayStart, $lte: now },
+      })
+        .select("sessionDurationMs createdAt")
+        .lean();
+
+      const todayCompletedMs = todayLogouts.reduce((sum, log: any) => {
+        const duration = Math.max(0, Number(log.sessionDurationMs) || 0);
+        const sinceMidnight = new Date(log.createdAt).getTime() - todayStart.getTime();
+        return sum + Math.min(duration, Math.max(0, sinceMidnight));
+      }, 0);
+
+      // Current open session (logged in and not yet logged out), clipped to today.
+      let currentSessionStart: Date | null = null;
+      if (
+        user?.lastLoginAt &&
+        (!user.lastLogoutAt || new Date(user.lastLoginAt) > new Date(user.lastLogoutAt))
+      ) {
+        const loginAt = new Date(user.lastLoginAt);
+        currentSessionStart = loginAt > todayStart ? loginAt : todayStart;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: { todayCompletedMs, currentSessionStart, serverNow: now },
+      });
+    } catch (error: any) {
+      console.error("Error recording heartbeat:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
   getUsers: async (req: Request, res: Response) => {
     try {
-      const users = await SystemUserModel.find({}).select('-password');
-      res.status(200).json({ success: true, data: users });
+      const users = await SystemUserModel.find({}).select('-password').lean();
+      const now = new Date();
+      const data = users.map((u: any) => ({ ...u, isOnline: computeIsOnline(u, now) }));
+      res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("Error getting system users:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
@@ -187,17 +253,9 @@ export const systemUserController = {
         if (row._id) totalCountMap.set(String(row._id), row.count || 0);
       });
 
-      const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
       const staffSummary = allUsers.map((u: any) => {
         const uid = String(u._id);
-        const lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt) : null;
-        const lastLogout = u.lastLogoutAt ? new Date(u.lastLogoutAt) : null;
-        const isOnline = Boolean(
-          u.isOnline &&
-            lastLogin &&
-            now.getTime() - lastLogin.getTime() < twoDaysMs &&
-            (!lastLogout || lastLogin > lastLogout)
-        );
+        const isOnline = computeIsOnline(u, now);
 
         return {
           _id: uid,
@@ -207,6 +265,7 @@ export const systemUserController = {
           isActive: u.isActive,
           lastLoginAt: u.lastLoginAt || null,
           lastLogoutAt: u.lastLogoutAt || null,
+          lastSeenAt: u.lastSeenAt || null,
           isOnline,
           todayLoginCount: todayCountMap.get(uid) || 0,
           totalLoginCount: totalCountMap.get(uid) || 0,
