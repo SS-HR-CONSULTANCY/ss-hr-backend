@@ -2,6 +2,7 @@ import { Router } from 'express';
 import passport from '../../infrastructure/auth/passport';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { authController } from '../controllers/authController';
+import { systemUserController } from '../controllers/systemUserController';
 
 const router = Router();
 
@@ -14,6 +15,8 @@ router.post('/resendOtp', authController.resendOtp);
 router.post('/login', authController.login);
 
 router.post('/logout', authController.logout);
+
+router.post('/heartbeat', authMiddleware, systemUserController.heartbeat);
 
 router.post('/verify-email', authController.verifyEmail);
 
