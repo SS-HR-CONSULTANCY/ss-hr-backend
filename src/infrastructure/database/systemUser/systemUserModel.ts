@@ -100,4 +100,28 @@ export const closeSessionUpdate = (
   };
 };
 
+/**
+ * Total logged-in time for today (IST). An open session counts up to `now` while the user
+ * is online; if they went offline without logging out, it counts only up to their last heartbeat.
+ */
+export const getTodayWorkMs = (
+  u: SessionFields & { lastSeenAt?: Date | string | null },
+  now: Date,
+  isOnline: boolean
+): number => {
+  let total = getCompletedMsForDay(u, now);
+  if (hasOpenSession(u)) {
+    const dayStart = getIstDayStart(now);
+    const loginAt = new Date(u.lastLoginAt as Date);
+    const start = loginAt > dayStart ? loginAt : dayStart;
+    let end = now;
+    if (!isOnline) {
+      const seenAt = u.lastSeenAt ? new Date(u.lastSeenAt) : loginAt;
+      end = seenAt < now ? seenAt : now;
+    }
+    total += Math.max(0, end.getTime() - start.getTime());
+  }
+  return total;
+};
+
 export const SystemUserModel = mongoose.model<ISystemUser>('SystemUser', SystemUserSchema);

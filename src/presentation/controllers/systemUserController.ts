@@ -7,6 +7,8 @@ import {
   getCompletedMsForDay,
   getIstDayStart,
   hasOpenSession,
+  getTodayWorkMs,
+  getIstDateKey,
 } from "../../infrastructure/database/systemUser/systemUserModel";
 import { StaffAuthLogModel } from "../../infrastructure/database/systemUser/staffAuthLogModel";
 
@@ -49,11 +51,149 @@ export const systemUserController = {
     }
   },
 
+  // Login/logout sessions of one user, grouped by IST day (newest first).
+  getSessionHistory: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(400).json({ success: false, message: "Invalid user id" });
+        return;
+      }
+      const days = Math.min(90, Math.max(1, parseInt(String(req.query.days || "30"), 10) || 30));
+
+      const user: any = await SystemUserModel.findById(id).select("-password").lean();
+      if (!user) {
+        res.status(404).json({ success: false, message: "User not found" });
+        return;
+      }
+
+      const now = new Date();
+      const rangeStart = new Date(getIstDayStart(now).getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+
+      const logs: any[] = await StaffAuthLogModel.find({
+        userId: new mongoose.Types.ObjectId(id),
+        createdAt: { $gte: rangeStart, $lte: now },
+      })
+        .sort({ createdAt: 1 })
+        .select("action createdAt sessionDurationMs ipAddress userAgent")
+        .lean();
+
+      type Session = {
+        loginAt: Date | null;
+        logoutAt: Date | null;
+        durationMs: number | null;
+        status: "completed" | "active" | "no-logout";
+        ipAddress?: string;
+        userAgent?: string;
+      };
+
+      const sessions: Session[] = [];
+      let open: Session | null = null;
+
+      for (const log of logs) {
+        const at = new Date(log.createdAt);
+        if (log.action === "LOGIN") {
+          if (open) {
+            // Logged in again without logging out: previous session ended at an unknown time.
+            open.status = "no-logout";
+            sessions.push(open);
+          }
+          open = {
+            loginAt: at,
+            logoutAt: null,
+            durationMs: null,
+            status: "active",
+            ipAddress: log.ipAddress,
+            userAgent: log.userAgent,
+          };
+        } else {
+          const duration =
+            typeof log.sessionDurationMs === "number" && log.sessionDurationMs > 0
+              ? log.sessionDurationMs
+              : open?.loginAt
+                ? at.getTime() - open.loginAt.getTime()
+                : null;
+          if (open) {
+            open.logoutAt = at;
+            open.durationMs = duration;
+            open.status = "completed";
+            sessions.push(open);
+            open = null;
+          } else {
+            // Login happened before the selected range.
+            sessions.push({
+              loginAt: duration ? new Date(at.getTime() - duration) : null,
+              logoutAt: at,
+              durationMs: duration,
+              status: "completed",
+              ipAddress: log.ipAddress,
+              userAgent: log.userAgent,
+            });
+          }
+        }
+      }
+
+      if (open) {
+        const isCurrent =
+          hasOpenSession(user) &&
+          user.lastLoginAt &&
+          Math.abs(new Date(user.lastLoginAt).getTime() - open.loginAt!.getTime()) < 60 * 1000;
+        if (isCurrent) {
+          const isOnline = computeIsOnline(user, now);
+          const seenAt = user.lastSeenAt ? new Date(user.lastSeenAt) : open.loginAt!;
+          const end = isOnline ? now : seenAt < now ? seenAt : now;
+          open.durationMs = Math.max(0, end.getTime() - open.loginAt!.getTime());
+          open.status = "active";
+        } else {
+          open.status = "no-logout";
+        }
+        sessions.push(open);
+      }
+
+      const byDay = new Map<string, { date: string; totalMs: number; sessions: Session[] }>();
+      for (const sess of sessions) {
+        const ref = sess.loginAt || sess.logoutAt;
+        if (!ref) continue;
+        const key = getIstDateKey(ref);
+        if (!byDay.has(key)) byDay.set(key, { date: key, totalMs: 0, sessions: [] });
+        const day = byDay.get(key)!;
+        day.sessions.push(sess);
+        day.totalMs += sess.durationMs || 0;
+      }
+
+      const dayList = Array.from(byDay.values())
+        .sort((a, b) => (a.date < b.date ? 1 : -1))
+        .map((d) => ({
+          ...d,
+          sessions: d.sessions.sort(
+            (a, b) =>
+              new Date(b.loginAt || b.logoutAt!).getTime() - new Date(a.loginAt || a.logoutAt!).getTime()
+          ),
+        }));
+
+      res.status(200).json({
+        success: true,
+        data: {
+          user: { _id: String(user._id), fullName: user.fullName, username: user.username, role: user.role },
+          days: dayList,
+          rangeDays: days,
+          serverNow: now,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error getting session history:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
   getUsers: async (req: Request, res: Response) => {
     try {
       const users = await SystemUserModel.find({}).select('-password').lean();
       const now = new Date();
-      const data = users.map((u: any) => ({ ...u, isOnline: computeIsOnline(u, now) }));
+      const data = users.map((u: any) => {
+        const isOnline = computeIsOnline(u, now);
+        return { ...u, isOnline, todayWorkMs: getTodayWorkMs(u, now, isOnline) };
+      });
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("Error getting system users:", error);
