@@ -87,7 +87,8 @@ const FullStackContactSchema = new Schema<IFullStackContact>(
     comment: { type: String, trim: true, default: '' },
     scheduledDate: { type: Date },
     scheduledAt: { type: Date, index: true },
-    assignedTo: { type: Schema.Types.ObjectId, ref: 'SystemUser', default: null, index: true },
+    // Multiple staff can be assigned to one contact. (Legacy single-ObjectId docs are cast to [id] on read.)
+    assignedTo: { type: [{ type: Schema.Types.ObjectId, ref: 'SystemUser' }], default: [], index: true },
     activityLog: { type: [FSSActivitySchema], default: [] },
   },
   { timestamps: true }
