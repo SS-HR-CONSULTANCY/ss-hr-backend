@@ -7,6 +7,17 @@ export const adminFullStackContactRouter = Router();
 
 adminFullStackContactRouter.use(authMiddleware);
 
+// Normalise a single id / array of ids from the request into unique ObjectIds (invalid values dropped)
+const toObjectIds = (input: unknown): mongoose.Types.ObjectId[] => {
+  const list = Array.isArray(input) ? input : input ? [input] : [];
+  const unique = new Set<string>();
+  for (const v of list) {
+    const s = String((v as any)?._id ?? v);
+    if (mongoose.Types.ObjectId.isValid(s)) unique.add(s);
+  }
+  return [...unique].map((s) => new mongoose.Types.ObjectId(s));
+};
+
 // GET / - List contacts with filters, search, pagination, and stats
 adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -32,7 +43,7 @@ adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: N
       }
     } else {
       if (assignedTo === "unassigned") {
-        query.assignedTo = { $in: [null, undefined] };
+        query.assignedTo = { $in: [null, []] };
       } else if (assignedTo && assignedTo !== "all") {
         if (mongoose.Types.ObjectId.isValid(assignedTo)) {
           query.assignedTo = new mongoose.Types.ObjectId(assignedTo);
@@ -187,7 +198,7 @@ adminFullStackContactRouter.post("/", async (req: Request, res: Response, next: 
       status,
       comment: comment ? comment.trim() : "",
       scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-      assignedTo: assignedTo && mongoose.Types.ObjectId.isValid(assignedTo) ? new mongoose.Types.ObjectId(assignedTo) : null,
+      assignedTo: toObjectIds(assignedTo),
       activityLog: initialActivity,
     });
 
@@ -253,7 +264,7 @@ adminFullStackContactRouter.put("/:id", async (req: Request, res: Response, next
       contact.status = status;
     }
     if (assignedTo !== undefined) {
-      contact.assignedTo = assignedTo && mongoose.Types.ObjectId.isValid(assignedTo) ? new mongoose.Types.ObjectId(assignedTo) : null;
+      contact.assignedTo = toObjectIds(assignedTo);
     }
 
     await contact.save();
@@ -357,11 +368,11 @@ adminFullStackContactRouter.patch("/:id/telecall", async (req: Request, res: Res
   }
 });
 
-// PATCH /:id/assign - Assign contact to a staff member
+// PATCH /:id/assign - Assign contact to one or more staff members (staffIds replaces the whole list)
 adminFullStackContactRouter.patch("/:id/assign", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { staffId } = req.body;
+    const staffIds = toObjectIds(req.body.staffIds ?? req.body.staffId);
 
     const contact = await FullStackContactModel.findById(id);
     if (!contact) {
@@ -369,13 +380,13 @@ adminFullStackContactRouter.patch("/:id/assign", async (req: Request, res: Respo
       return;
     }
 
-    const previousStaff = contact.assignedTo ? String(contact.assignedTo) : "Unassigned";
-    contact.assignedTo = staffId && mongoose.Types.ObjectId.isValid(staffId) ? new mongoose.Types.ObjectId(staffId) : null;
+    const previousStaff = contact.assignedTo?.length ? contact.assignedTo.map(String).join(", ") : "Unassigned";
+    contact.assignedTo = staffIds;
 
     contact.activityLog.push({
       type: "assignment",
       from: previousStaff,
-      to: staffId ? String(staffId) : "Unassigned",
+      to: staffIds.length ? staffIds.map(String).join(", ") : "Unassigned",
       at: new Date(),
       by: (req.user as any)?.username || "Admin",
     });

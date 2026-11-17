@@ -32,6 +32,7 @@ import importedCustomerRouter from './presentation/routes/importedCustomerRouter
 import systemUserRouter from './presentation/routes/systemUserRouter';
 import { adminFullStackContactRouter } from './presentation/routes/adminFullStackContactRouter';
 import { adminDailyDutyRouter } from './presentation/routes/adminDailyDutyRouter';
+import { adminStaffDashboardRouter } from './presentation/routes/adminStaffDashboardRouter';
 
 const app = express();
 
@@ -108,6 +109,7 @@ app.use('/api/admin/system-users', systemUserRouter);
 app.use('/api/imported-customers', importedCustomerRouter);
 app.use('/api/admin/full-stack-contacts', adminFullStackContactRouter);
 app.use('/api/admin/daily-duties', adminDailyDutyRouter);
+app.use('/api/admin/staff-dashboard', adminStaffDashboardRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
