@@ -186,7 +186,9 @@ export class AuthController {
         message,
         user,
         address,
-        careerData
+        careerData,
+        // Fallback for browsers that block third-party cookies (API is on a different site).
+        token,
       };
 
       res.status(200).json(resultWithoutToken);
