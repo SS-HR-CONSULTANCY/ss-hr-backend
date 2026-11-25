@@ -607,9 +607,9 @@ adminFullStackContactRouter.post("/summarize-comment", async (req: Request, res:
     }
 
     const systemPrompt =
-      'You are an expert telesales CRM assistant for "Full Stack Solutions" (a modern software development and web design agency). You summarize telesales call remarks or WhatsApp chats with business clients (companies, NOT job candidates).\n\nSummarize the conversation into a concise, professional CRM activity note (1 to 2 short sentences or clean lines).\nKey Rules:\n1. Having NO website or an outdated website is a PRIME BUSINESS OPPORTUNITY to pitch web development and digital services. Frame it positively as a sales opportunity.\n2. If the lead status is "Need Follow Up" or has a scheduled date, state the requirement/pitch opportunity and mention the scheduled follow-up.\n3. ONLY if the lead status is "Lost" or "Not Interested" (and the client explicitly refused/rejected), state that the lead is closed/lost with no follow-up needed.\n4. Output ONLY the clean note text without quotes or conversational fluff.';
+      'You are an expert telesales CRM assistant for "Full Stack Solutions" (a modern software development and web design agency). You summarize telesales call remarks or WhatsApp chats with business clients (companies, NOT job candidates).\n\nSummarize the notes as BULLET POINTS only. Each bullet starts with one relevant emoji icon and a space (NOT a dash), and is one short, simple line (max ~12 words).\nKey Rules:\n1. COVER EVERY distinct fact, request and action in the notes — one bullet each. Never drop anything the user wrote (e.g. callback timing, things to send/share, decisions, objections). Do not add a fixed number of bullets; use as many as the notes need (usually 2 to 6).\n1b. ORDER MATTERS: the FIRST bullet must be the MAIN POINT — the specific subject, request, requirement, decision or blocker the conversation is actually about (e.g. "Discuss Agoda API configuration support", "Needs to discuss with partner", "Wants a quote for a booking website", "Refused the offer"). It is shown alone in a list view so the team understands the lead at a glance. The scheduled follow-up date or call time must NEVER be the first bullet unless it is the only fact; put it LAST. Generic statements (e.g. "opportunity identified for web development services") must NOT be written at all unless the notes say it, and never come before the main point.\n2. Keep timing words exactly as written (e.g. "tomorrow evening", "next Monday"); do not invent exact dates or times.\n3. NEVER write a bullet about the website or about having no website UNLESS the call notes text itself explicitly says so (e.g. "no website"). Do NOT infer it from a missing Website field. Do not add generic sales-opportunity bullets either. If the notes do say there is no website, state it plainly, e.g. "🌐 There is no website for Crystal Homes".\n4. If the client must consult someone (partner, boss, family) first, add e.g. "🤝 Needs to discuss with partner for final confirmation".\n5. NO DUPLICATES: every fact appears in exactly ONE bullet. Calls, follow-ups, callbacks and scheduled dates are ONE single bullet at the end — never write both "Scheduled call" and "Follow-up" bullets. The notes may already contain bullets or lines from an earlier summary: merge and rewrite them, never repeat them. If the Scheduled Follow-up field has a date, that date is authoritative: use it (and ignore any different older date in the notes), e.g. "📞 Scheduled call on 25-11-2026" (merge with call-timing words from the notes, e.g. "Call tomorrow evening - 25-11-2026"). If there is no Scheduled Follow-up date, keep the timing exactly as written. ALWAYS write dates as DD-MM-YYYY (convert from YYYY-MM-DD).\n6. ONLY if the lead status is "Lost" or "Not Interested" (client explicitly refused), add a bullet that the lead is closed with no follow-up needed.\n7. Only include facts in the notes. Use the company name when known; fix obvious spelling mistakes. Output ONLY the bullet lines, one per line, no headings, quotes or extra text.\n\nIcons: 🌐 website, 🤝 partner/decision, 📞 call, 📅 date, 💬 WhatsApp/message, 📄 share profile/documents, 💰 budget, ✅ interested, ❌ not interested.\n\nExample 1 (notes: "no website. wants to ask partner. call on 25 Nov"):\n🤝 Needs to discuss with partner for final confirmation\n🌐 There is no website for Crystal Homes\n📞 Scheduled call on 25-11-2026\n\nExample 2 (notes: "he told to call tomorrow evening. share profile and details on whatsapp"):\n📞 Call tomorrow evening\n💬 Share profile and details on WhatsApp';
 
-    const userPrompt = `Client / Company: ${companyName || "N/A"}\nWebsite: ${website || "N/A"}\nLead Status: ${status || "N/A"}\nScheduled Follow-up: ${scheduledDate || "None"}\n\nCall Notes / Remarks:\n${rawContent}`;
+    const userPrompt = `Client / Company: ${companyName || "N/A"}\n${website ? `Website: ${website}\n` : ""}Lead Status: ${status || "N/A"}\nScheduled Follow-up: ${scheduledDate || "None"}\n\nCall Notes / Remarks:\n${rawContent}`;
 
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -634,7 +634,22 @@ adminFullStackContactRouter.post("/summarize-comment", async (req: Request, res:
 
     const aiJson: any = await aiRes.json();
     let summary = String(aiJson?.choices?.[0]?.message?.content || "").trim();
-    summary = summary.replace(/^#{1,6}\s*/gm, "").trim();
+    summary = summary.replace(/^#{1,6}\s*/gm, "").replace(/^\s*[-*]\s+/gm, "• ").trim();
+
+    // Enforce a single call/follow-up bullet when a scheduled date exists
+    const schedParsed = scheduledDate ? new Date(scheduledDate) : null;
+    if (schedParsed && !isNaN(schedParsed.getTime())) {
+      const dd = String(schedParsed.getUTCDate()).padStart(2, "0");
+      const mm = String(schedParsed.getUTCMonth() + 1).padStart(2, "0");
+      const dateLine = `📞 Scheduled call on ${dd}-${mm}-${schedParsed.getUTCFullYear()}`;
+      const datePattern = /\d{1,2}[-/.]\d{1,2}[-/.]\d{4}|\d{4}-\d{2}-\d{2}/;
+      const callPattern = /follow[- ]?up|scheduled|call|callback/i;
+      const kept = summary
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l && !(datePattern.test(l) && callPattern.test(l)));
+      summary = [...kept, dateLine].join("\n");
+    }
 
     res.status(200).json({
       success: true,
