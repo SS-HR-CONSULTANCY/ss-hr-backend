@@ -18,6 +18,9 @@ const toObjectIds = (input: unknown): mongoose.Types.ObjectId[] => {
   return [...unique].map((s) => new mongoose.Types.ObjectId(s));
 };
 
+// List order: statuses earlier in this array appear first (anything else goes last)
+const STATUS_PRIORITY = ["In Discussion", "Need Follow Up", "Pending", "Contacted", "Lost", "Completed"];
+
 // GET / - List contacts with filters, search, pagination, and stats
 adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -90,11 +93,31 @@ adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: N
     const skip = (page - 1) * limit;
 
     const [contacts, filteredTotal, total, pendingCount, contactedCount, needFollowUpCount, convertedCount, rawServices, rawStates] = await Promise.all([
-      FullStackContactModel.find(listQuery)
-        .populate("assignedTo", "fullName username role")
-        .sort({ createdAt: -1, _id: -1 })
-        .skip(skip)
-        .limit(limit),
+      FullStackContactModel.aggregate([
+        { $match: listQuery },
+        {
+          $addFields: {
+            statusRank: {
+              $switch: {
+                branches: STATUS_PRIORITY.map((s, i) => ({
+                  case: { $eq: ["$status", s] },
+                  then: i,
+                })),
+                default: STATUS_PRIORITY.length,
+              },
+            },
+          },
+        },
+        { $sort: { statusRank: 1, createdAt: -1, _id: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $project: { statusRank: 0 } },
+      ]).then((docs) =>
+        FullStackContactModel.populate(docs, {
+          path: "assignedTo",
+          select: "fullName username role",
+        })
+      ),
       FullStackContactModel.countDocuments(listQuery),
       FullStackContactModel.countDocuments(query),
       FullStackContactModel.countDocuments({ ...query, status: "Pending" }),
