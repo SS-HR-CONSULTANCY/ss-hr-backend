@@ -21,6 +21,34 @@ const toObjectIds = (input: unknown): mongoose.Types.ObjectId[] => {
 // List order: statuses earlier in this array appear first (anything else goes last)
 const STATUS_PRIORITY = ["In Discussion", "Need Follow Up", "Pending", "Contacted", "Lost", "Completed"];
 
+// Find an existing contact whose client/company name matches (case-insensitive, extra spaces ignored)
+const escapeRegex = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const findDuplicateByName = async (rawName: string, excludeId?: string) => {
+  const clean = rawName.trim().replace(/\s+/g, " ");
+  if (!clean) return null;
+  const pattern = new RegExp(`^\\s*${escapeRegex(clean).replace(/ /g, "\\s+")}\\s*$`, "i");
+  const filter: any = { $or: [{ name: pattern }, { companyName: pattern }] };
+  if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+    filter._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+  }
+  return FullStackContactModel.findOne(filter).select("name companyName").lean();
+};
+
+// GET /check-duplicate?name=...&excludeId=... - Live duplicate client-name check for the forms
+adminFullStackContactRouter.get("/check-duplicate", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const name = typeof req.query.name === "string" ? req.query.name : "";
+    const excludeId = typeof req.query.excludeId === "string" ? req.query.excludeId : undefined;
+    const existing = await findDuplicateByName(name, excludeId);
+    res.status(200).json({
+      success: true,
+      data: { exists: !!existing, name: existing ? existing.companyName || existing.name : "" },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET / - List contacts with filters, search, pagination, and stats
 adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -184,6 +212,10 @@ adminFullStackContactRouter.post("/", async (req: Request, res: Response, next: 
       res.status(400).json({ success: false, message: "Contact number is required" });
       return;
     }
+    if (await findDuplicateByName(contactName)) {
+      res.status(409).json({ success: false, message: `A client named "${contactName}" already exists` });
+      return;
+    }
 
     const creatorName = (req.user as any)?.username || (req.user as any)?.fullName || "Admin";
 
@@ -266,6 +298,14 @@ adminFullStackContactRouter.put("/:id", async (req: Request, res: Response, next
       status,
       assignedTo,
     } = req.body;
+
+    const newName = typeof name === "string" ? name.trim() : "";
+    if (newName && newName.toLowerCase() !== contact.name.trim().toLowerCase()) {
+      if (await findDuplicateByName(newName, id)) {
+        res.status(409).json({ success: false, message: `A client named "${newName}" already exists` });
+        return;
+      }
+    }
 
     if (name) contact.name = name.trim();
     if (phone) contact.phone = phone.trim();
