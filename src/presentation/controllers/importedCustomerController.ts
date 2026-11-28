@@ -206,6 +206,20 @@ export const importedCustomerController = {
       const contactedCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Contacted' });
       const needFollowUpCount = await ImportedCustomerModel.countDocuments({ ...query, status: 'Need Follow Up' });
 
+      // Per-status counts for the status filter buttons (same scope as the stats, ignoring the status filter).
+      // Normalised the same way the status filter matches: empty/null → Pending, Recontacted → Re-contacted.
+      const statusAgg = await ImportedCustomerModel.aggregate([
+        { $match: query },
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]);
+      const statusCounts: Record<string, number> = {};
+      for (const row of statusAgg) {
+        let key = row._id as string | null;
+        if (!key) key = 'Pending';
+        else if (key === 'Recontacted') key = 'Re-contacted';
+        statusCounts[key] = (statusCounts[key] || 0) + row.count;
+      }
+
       // Calculate start and end of "today" for status changes (accounting for client date and IST)
       const clientToday = (req.query.today as string) || new Date().toISOString().split('T')[0];
       let dayRangeStart: Date;
@@ -311,7 +325,8 @@ export const importedCustomerController = {
             pending: pendingCount,
             contacted: contactedCount,
             needFollowUp: needFollowUpCount,
-            myCallsToday: myCallsTodayCount
+            myCallsToday: myCallsTodayCount,
+            statusCounts
           }
         }
       });
