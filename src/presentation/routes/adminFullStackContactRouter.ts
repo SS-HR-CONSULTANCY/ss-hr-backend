@@ -156,6 +156,16 @@ adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: N
       FullStackContactModel.distinct("state", { state: { $exists: true, $nin: ["", null] } }),
     ]);
 
+    // Per-status counts for the status filter buttons (same scope as stats, ignoring the status filter)
+    const statusAgg = await FullStackContactModel.aggregate([
+      { $match: query },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+    const statusCounts: Record<string, number> = {};
+    for (const row of statusAgg) {
+      if (row._id) statusCounts[row._id] = row.count;
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -171,6 +181,7 @@ adminFullStackContactRouter.get("/", async (req: Request, res: Response, next: N
           contacted: contactedCount,
           needFollowUp: needFollowUpCount,
           converted: convertedCount,
+          statusCounts,
         },
       },
     });
